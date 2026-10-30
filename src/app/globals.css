@@ -101,24 +101,23 @@ body {
   inset: 0;
   z-index: -10;
   overflow: hidden;
-  background: #1c2522;
+  background: #2a2a2a;
 }
 
 .live-photo {
   position: absolute;
   inset: -4%;
-  background: url("/images/forest-bg.jpg") center 40% / cover no-repeat;
-  /* Softened: a touch of blur and lower contrast, brightness left untouched. */
-  filter: blur(2px) contrast(0.88) saturate(0.9);
+  /* The image is pre-blurred so only its tonal bands remain. */
+  background: url("/images/coast-bg.jpg") center / cover no-repeat;
   animation: drift 48s ease-in-out infinite alternate;
   will-change: transform;
 }
 
-/* Light, misty wash that fades the photo without darkening it. */
+/* Soft wash that lifts the tones slightly without darkening them. */
 .live-haze {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgb(225 232 230 / 0.18), rgb(225 232 230 / 0.08) 50%, rgb(20 28 26 / 0.25));
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 45%, rgb(0 0 0 / 0.18));
 }
 
 @keyframes drift {

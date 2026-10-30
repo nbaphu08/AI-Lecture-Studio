@@ -1,4 +1,4 @@
-/** Fixed forest backdrop behind the liquid-glass panels, with a slow drift so the page feels alive. */
+/** Fixed blurred coastline backdrop behind the liquid-glass panels, with a slow drift so the page feels alive. */
 export function LiveBackground() {
   return (
     <div className="live-bg" aria-hidden>
