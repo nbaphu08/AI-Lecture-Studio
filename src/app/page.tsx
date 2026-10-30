@@ -27,7 +27,7 @@ export default function LandingPage() {
         </Link>
       </header>
 
-      <section className="flex flex-1 flex-col items-center justify-center px-6 pb-24 text-center">
+      <section className="flex flex-1 flex-col items-center justify-center px-6 pb-40 text-center sm:pb-48 lg:pb-64">
         <div className="rise gold-rule" style={{ animationDelay: "0.5s" }} aria-hidden />
 
         <h1 className="hero-title rise mt-9 font-display" style={{ animationDelay: "0.7s" }}>
