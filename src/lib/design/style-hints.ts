@@ -28,6 +28,7 @@ const RULES: Rule[] = [
   { label: "modern", pattern: /\bmodern\b/i, apply: (s) => (s.themeId ??= "modern") },
   { label: "corporate", pattern: /\bcorporate\b/i, apply: (s) => (s.themeId ??= "corporate") },
   { label: "editorial", pattern: /\beditorial\b|\bmagazine\b/i, apply: (s) => (s.themeId ??= "editorial") },
+  { label: "midnight", pattern: /\bmidnight\b|\bneon\b|\btech(?:nology)?\b/i, apply: (s) => (s.themeId ??= "midnight") },
   // Looser synonyms only apply when no theme was named explicitly.
   { label: "clean", pattern: /\bclean\b|\bsimple\b/i, apply: (s) => (s.themeId ??= "minimalist") },
   { label: "bold", pattern: /\bbold\b/i, apply: (s) => (s.themeId ??= "modern") },

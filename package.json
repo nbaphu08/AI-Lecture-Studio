@@ -12,6 +12,7 @@
     "sample": "node scripts/build-sample-docx.ts"
   },
   "dependencies": {
+    "jszip": "^3.10.2",
     "lucide-react": "^1.64.0",
     "mammoth": "^1.13.0",
     "next": "^16.4.3",
@@ -28,7 +29,6 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.4.3",
     "jsdom": "^30.1.3",
-    "jszip": "^3.10.2",
     "postcss": "^8.5.32",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",

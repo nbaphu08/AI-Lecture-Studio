@@ -62,7 +62,12 @@ export function composeDeck(plan: DeckPlan, settings: EffectiveSettings): Compos
       sz: (pt) => Math.round(pt * grid.fontScale * 10) / 10,
     };
     const result = layoutFor(slide, ctx);
-    return { background: result.background ?? theme.colors.background, shapes: result.shapes, title: slide.title };
+    return {
+      background: result.background ?? theme.colors.background,
+      backgroundGradient: result.backgroundGradient,
+      shapes: result.shapes,
+      title: slide.title,
+    };
   });
   return { w: grid.w, h: grid.h, slides };
 }

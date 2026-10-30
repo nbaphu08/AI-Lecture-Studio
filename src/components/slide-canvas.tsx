@@ -2,7 +2,7 @@
 
 import { memo, useId } from "react";
 import { NATURAL_LINE_HEIGHT } from "@/lib/design/text-utils";
-import type { ComposedSlide, Shape } from "@/lib/pptx/draw";
+import type { ComposedSlide, Gradient, Shadow, Shape } from "@/lib/pptx/draw";
 
 /** CSS fallbacks for fonts that may not be installed on the viewer's machine. */
 const FONT_STACKS: Record<string, string> = {
@@ -14,6 +14,31 @@ const FONT_STACKS: Record<string, string> = {
   Verdana: "Verdana, Geneva, sans-serif",
   "Times New Roman": '"Times New Roman", Times, serif',
 };
+
+function gradientVector(angle: number) {
+  const rad = (angle * Math.PI) / 180;
+  const dx = Math.cos(rad) / 2;
+  const dy = Math.sin(rad) / 2;
+  return { x1: 0.5 - dx, y1: 0.5 - dy, x2: 0.5 + dx, y2: 0.5 + dy };
+}
+
+function dropShadow(sh: Shadow, slideW: number): string {
+  const rad = ((sh.angle ?? 90) * Math.PI) / 180;
+  const u = (pts: number) => `${(pts / 72 / slideW) * 100}cqw`;
+  return `drop-shadow(${u(Math.cos(rad) * sh.offset)} ${u(Math.sin(rad) * sh.offset)} ${u(sh.blur / 2)} ${rgba(sh.color ?? "000000", 1 - sh.opacity)})`;
+}
+
+function rgba(hex: string, alpha = 0): string {
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return alpha ? `rgba(${r}, ${g}, ${b}, ${1 - alpha})` : `#${hex}`;
+}
+
+/** PowerPoint angles (0 = left→right, 90 = top→bottom) → CSS (0 = bottom→top, 90 = left→right). */
+function cssGradient(g: Gradient): string {
+  return `linear-gradient(${g.angle + 90}deg, #${g.from}, #${g.to})`;
+}
 
 interface Props {
   slide: ComposedSlide;
@@ -30,6 +55,10 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
   const uid = useId().replace(/:/g, "");
   const cq = (inches: number) => `${(inches / width) * 100}cqw`;
   const pt = (points: number) => cq(points / 72);
+  const boxShadow = (sh: Shadow) => {
+    const rad = ((sh.angle ?? 90) * Math.PI) / 180;
+    return `${cq((Math.cos(rad) * sh.offset) / 72)} ${cq((Math.sin(rad) * sh.offset) / 72)} ${pt(sh.blur)} ${rgba(sh.color ?? "000000", 1 - sh.opacity)}`;
+  };
   const box = (s: { x: number; y: number; w: number; h: number }) => ({
     left: `${(s.x / width) * 100}%`,
     top: `${(s.y / height) * 100}%`,
@@ -40,30 +69,56 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
   const render = (s: Shape, i: number) => {
     switch (s.t) {
       case "rect":
-        return (
-          <div
-            key={i}
-            className="absolute"
-            style={{
-              ...box(s),
-              background: s.fill ? `#${s.fill}` : undefined,
-              border: s.line ? `${pt(s.line.width)} solid #${s.line.color}` : undefined,
-              borderRadius: s.radius ? cq(s.radius) : undefined,
-            }}
-          />
-        );
       case "ellipse":
         return (
           <div
             key={i}
-            className="absolute rounded-full"
+            className={`absolute ${s.t === "ellipse" ? "rounded-full" : ""}`}
             style={{
               ...box(s),
-              background: s.fill ? `#${s.fill}` : undefined,
-              border: s.line ? `${pt(s.line.width)} solid #${s.line.color}` : undefined,
+              background: s.gradient ? cssGradient(s.gradient) : s.fill ? rgba(s.fill, s.alpha) : undefined,
+              border: s.line ? `${pt(s.line.width)} ${s.line.dash ? "dashed" : "solid"} ${rgba(s.line.color, s.line.alpha)}` : undefined,
+              borderRadius: s.t === "rect" && s.radius ? cq(Math.min(s.radius, s.h / 2, s.w / 2)) : undefined,
+              boxShadow: s.shadow ? boxShadow(s.shadow) : undefined,
+              boxSizing: "border-box",
             }}
           />
         );
+      case "poly": {
+        const xs = s.points.map((p) => p[0]);
+        const ys = s.points.map((p) => p[1]);
+        const bx = Math.min(...xs);
+        const by = Math.min(...ys);
+        const bw = Math.max(...xs) - bx;
+        const bh = Math.max(...ys) - by;
+        const gid = `grad-${uid}-${i}`;
+        return (
+          <svg
+            key={i}
+            className="pointer-events-none absolute overflow-visible"
+            style={box({ x: bx, y: by, w: bw, h: bh })}
+            viewBox={`${bx} ${by} ${bw} ${bh}`}
+            preserveAspectRatio="none"
+          >
+            {s.gradient && (
+              <defs>
+                <linearGradient id={gid} gradientUnits="objectBoundingBox" {...gradientVector(s.gradient.angle)}>
+                  <stop offset="0" stopColor={`#${s.gradient.from}`} />
+                  <stop offset="1" stopColor={`#${s.gradient.to}`} />
+                </linearGradient>
+              </defs>
+            )}
+            <polygon
+              points={s.points.map((p) => p.join(",")).join(" ")}
+              fill={s.gradient ? `url(#${gid})` : s.fill ? `#${s.fill}` : "none"}
+              fillOpacity={s.alpha ? 1 - s.alpha : undefined}
+              stroke={s.line ? `#${s.line.color}` : "none"}
+              strokeWidth={s.line ? s.line.width / 72 : undefined}
+              style={s.shadow ? { filter: dropShadow(s.shadow, width) } : undefined}
+            />
+          </svg>
+        );
+      }
       case "line": {
         const marker = `arrow-${uid}-${i}`;
         return (
@@ -82,6 +137,7 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
               y2={s.y2}
               stroke={`#${s.color}`}
               strokeWidth={s.width / 72}
+              strokeDasharray={s.dash ? (s.dash === "dot" ? "0.02 0.06" : "0.1 0.06") : undefined}
               markerEnd={s.arrow ? `url(#${marker})` : undefined}
             />
           </svg>
@@ -97,7 +153,7 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
               ...box(s),
               justifyContent: s.valign === "middle" ? "center" : s.valign === "bottom" ? "flex-end" : "flex-start",
               textAlign: s.align ?? "left",
-              color: `#${s.color}`,
+              color: rgba(s.color, s.alpha),
               fontFamily: FONT_STACKS[s.font] ?? s.font,
               fontSize: pt(s.size),
               fontWeight: s.bold ? 700 : 400,
@@ -120,7 +176,7 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
                     marginBottom: p.spaceAfter && j < s.paras.length - 1 ? pt(p.spaceAfter) : undefined,
                     fontWeight: p.bold === undefined ? undefined : p.bold ? 700 : 400,
                     fontStyle: p.italic ? "italic" : undefined,
-                    color: p.color ? `#${p.color}` : undefined,
+                    color: p.color ? rgba(p.color, s.alpha) : undefined,
                     fontSize: p.size ? pt(size) : undefined,
                   }}
                 >
@@ -135,7 +191,13 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
       case "image":
         return (
           // eslint-disable-next-line @next/next/no-img-element -- local data URI from the user's document
-          <img key={i} src={s.src} alt={s.alt ?? ""} className="absolute object-contain" style={box(s)} />
+          <img
+            key={i}
+            src={s.src}
+            alt={s.alt ?? ""}
+            className="absolute object-contain"
+            style={{ ...box(s), boxShadow: s.shadow ? boxShadow(s.shadow) : undefined }}
+          />
         );
       case "table": {
         const totalH = s.rowH.reduce((a, b) => a + b, 0);
@@ -167,7 +229,8 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
                       <td
                         key={c}
                         style={{
-                          border: `${pt(0.75)} solid #${s.borderColor}`,
+                          border: s.rulesOnly ? "none" : `${pt(0.75)} solid #${s.borderColor}`,
+                          borderBottom: `${pt(0.75)} solid #${s.borderColor}`,
                           padding: `${cq(0.07)} ${cq(0.1)}`,
                           background: header ? `#${s.headerFill}` : zebra ? `#${s.zebraFill}` : `#${s.bodyFill}`,
                           color: header ? `#${s.headerColor}` : undefined,
@@ -192,7 +255,10 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
   return (
     <div
       className={`slide-canvas ${className ?? ""}`}
-      style={{ aspectRatio: `${width} / ${height}`, background: `#${slide.background}` }}
+      style={{
+        aspectRatio: `${width} / ${height}`,
+        background: slide.backgroundGradient ? cssGradient(slide.backgroundGradient) : `#${slide.background}`,
+      }}
       role="img"
       aria-label={`Slide: ${slide.title}`}
     >

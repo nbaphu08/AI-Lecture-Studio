@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import JSZip from "jszip";
 import { JSDOM } from "jsdom";
 import { sampleParts } from "../../scripts/sample-content.ts";
-import { buildPptx } from "@/lib/pptx/generate";
+import { writePptx } from "@/lib/pptx/generate";
 import { composeDeck } from "@/lib/pptx/compose";
 import { planSlides } from "@/lib/slides/planner";
 import { resolveSettings } from "@/lib/design/style-hints";
@@ -35,6 +35,7 @@ async function sampleDoc(): Promise<ParsedDocument> {
 function inBounds(s: Shape, w: number, h: number): boolean {
   const eps = 0.01;
   if (s.t === "line") return Math.min(s.x1, s.x2) >= -eps && Math.max(s.x1, s.x2) <= w + eps && Math.min(s.y1, s.y2) >= -eps && Math.max(s.y1, s.y2) <= h + eps;
+  if (s.t === "poly") return s.points.every(([x, y]) => x >= -eps && x <= w + eps && y >= -eps && y <= h + eps);
   if (s.t === "table") return s.x >= 0 && s.x + s.w <= w + eps && s.y + s.rowH.reduce((a, b) => a + b, 0) <= h + eps;
   return s.x >= -eps && s.y >= -eps && s.x + s.w <= w + eps && s.y + s.h <= h + eps;
 }
@@ -56,8 +57,7 @@ describe("PPTX generation", () => {
             .forEach((s) => expect(inBounds(s, deck.w, deck.h), `${theme.id} ${aspect} slide ${i + 1} ${s.t}`).toBe(true)),
         );
 
-        const pptx = await buildPptx(deck, { title: plan.title });
-        const buffer = (await pptx.write({ outputType: "nodebuffer" })) as Buffer;
+        const buffer = (await writePptx(deck, { title: plan.title })) as Uint8Array;
         const zip = await JSZip.loadAsync(buffer);
         const slideFiles = Object.keys(zip.files).filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f));
         expect(slideFiles).toHaveLength(plan.slides.length);
@@ -72,6 +72,9 @@ describe("PPTX generation", () => {
           allXml += xml;
         }
         expect(allXml).toContain("<a:tbl>");
+        // Gradients are written as real gradient fills, and no placeholder color is left behind.
+        expect(allXml).toContain("<a:gradFill");
+        expect(allXml).not.toMatch(/val="F1E2D3"/);
         expect(allXml).toContain("Introduction to Renewable Energy");
         expect(allXml).toContain("Edmond Becquerel");
         const presXml = await zip.file("ppt/presentation.xml")!.async("string");

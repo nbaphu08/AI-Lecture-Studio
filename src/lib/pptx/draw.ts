@@ -15,20 +15,47 @@ export interface Para {
   spaceAfter?: number;
 }
 
+/** Two-stop linear gradient. `angle` follows PowerPoint: 0 = left→right, 90 = top→bottom. */
+export interface Gradient {
+  from: string;
+  to: string;
+  angle: number;
+}
+
+/** Soft drop shadow. `offset` is in points, `blur` in points, `opacity` 0–1. */
+export interface Shadow {
+  blur: number;
+  offset: number;
+  opacity: number;
+  color?: string;
+  /** Direction in degrees (PowerPoint: 90 = straight down). Defaults to 90. */
+  angle?: number;
+}
+
+interface Paint {
+  fill?: string;
+  /** Overrides `fill` with a gradient. */
+  gradient?: Gradient;
+  /** Fill transparency, 0 (opaque) to 1 (invisible). */
+  alpha?: number;
+  line?: { color: string; width: number; alpha?: number; dash?: "dash" | "dot" };
+  shadow?: Shadow;
+}
+
 export type Shape =
-  | {
+  | ({
       t: "rect";
       x: number;
       y: number;
       w: number;
       h: number;
-      fill?: string;
-      line?: { color: string; width: number };
       /** Corner radius in inches (0 = square). */
       radius?: number;
-    }
-  | { t: "ellipse"; x: number; y: number; w: number; h: number; fill?: string; line?: { color: string; width: number } }
-  | { t: "line"; x1: number; y1: number; x2: number; y2: number; color: string; width: number; arrow?: boolean }
+    } & Paint)
+  | ({ t: "ellipse"; x: number; y: number; w: number; h: number } & Paint)
+  /** Closed polygon; `points` are absolute slide coordinates in inches. */
+  | ({ t: "poly"; points: Array<[number, number]> } & Paint)
+  | { t: "line"; x1: number; y1: number; x2: number; y2: number; color: string; width: number; arrow?: boolean; dash?: "dash" | "dot" }
   | {
       t: "text";
       x: number;
@@ -47,8 +74,10 @@ export type Shape =
       /** Letter spacing in points (used for small caps labels). */
       charSpacing?: number;
       uppercase?: boolean;
+      /** Text transparency, 0 (opaque) to 1 (invisible). */
+      alpha?: number;
     }
-  | { t: "image"; x: number; y: number; w: number; h: number; src: string; alt?: string }
+  | { t: "image"; x: number; y: number; w: number; h: number; src: string; alt?: string; shadow?: Shadow }
   | {
       t: "table";
       x: number;
@@ -66,10 +95,14 @@ export type Shape =
       zebraFill: string;
       bodyFill: string;
       borderColor: string;
+      /** Only horizontal rules between rows (no vertical grid lines). */
+      rulesOnly?: boolean;
     };
 
 export interface ComposedSlide {
   background: string;
+  /** Replaces the flat background when present. */
+  backgroundGradient?: Gradient;
   shapes: Shape[];
   /** Plain-text version for speaker notes / accessibility. */
   title: string;

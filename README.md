@@ -11,11 +11,17 @@ There is no server, no account, no API key and no AI model. The document is read
 ## 1. What it does
 
 1. **Upload** a Word document (`.docx`, up to 15 MB). Drag-and-drop and the file picker both work. A bundled sample document is available for demos.
-2. **Choose a design.** There are five themes: Academic, Minimalist, Modern, Corporate and Editorial. You can also set the accent color, background, font, aspect ratio (16:9 or 4:3), content density, slide numbers and section labels.
+2. **Choose a design.** There are six themes: Academic, Minimalist, Modern, Corporate, Editorial and Midnight (dark). You can also set the accent color, background, font, aspect ratio (16:9 or 4:3), content density, slide numbers and section labels.
 3. **Optionally describe a style** in plain words, for example *"navy blue, large titles, less text"*. A small keyword mapper turns the phrases it recognizes into settings. It ignores everything else and tells you so.
 4. **Generate.** A progress list shows each local stage: reading, analyzing, planning, designing and preparing the PowerPoint.
 5. **Preview** the slides in the browser. There's a gallery, keyboard navigation and a larger view.
 6. **Download** the `.pptx`.
+
+### Design
+
+Each theme has its own cover, section divider and title frame. The slides use gradient backgrounds, soft card shadows, translucent decorative shapes, chevron process bands, an alternating timeline, a progress bar and numbered badges.
+
+All of this is native PowerPoint: gradients, shadows, transparency and custom shapes stay editable in PowerPoint's *Format Shape* panel. Nothing is flattened into a picture.
 
 ### Slide layouts
 
@@ -25,16 +31,16 @@ The planner picks from 12 layouts using deterministic rules:
 | --- | --- |
 | Cover | Document title (Word *Title* style, or a single leading Heading 1) plus a short subtitle |
 | Section divider | Each Heading 1 when the document has 3 or more top-level sections |
-| Standard content | Prose paragraphs (short statements become a highlighted callout) |
-| Title + bullets | Lists, and paragraphs split at sentence boundaries |
+| Standard content | Prose paragraphs (short statements become a pull quote; the first of several paragraphs becomes a lead) |
+| Title + bullets | Lists, and paragraphs split at sentence boundaries. 2–3 short items become feature cards, 4 become a 2×2 grid, 5–6 become numbered rows, and an introduced list gets a lead with cards or a side panel |
 | Two columns | Long lists of short items, or a heading with two small subsections |
 | Definition / key concept | A heading followed by one short explanation, or a "**Term**: explanation" line |
-| Process | Ordered lists, "Step 1: …" paragraphs, or "First… Then… Finally…" sentences |
-| Timeline | 3 or more items that start with a date ("1998: …", "In March 2011, …") |
+| Process | Ordered lists, "Step 1: …" paragraphs, or "First… Then… Finally…" sentences. Drawn as a chevron band with step cards |
+| Timeline | 3 or more items that start with a date ("1998: …", "In March 2011, …"). With 4 or more events, the cards alternate above and below the axis |
 | Comparison | A "X vs Y" heading with two subsections, or a paragraph with an explicit contrast ("In contrast, …") |
 | Table | Real Word tables, paginated with a repeated header row |
 | Image + text | Embedded images, paired with the nearby text |
-| Key takeaways | Sections titled Conclusion, Summary, Key Takeaways, Recommendations, … |
+| Key takeaways | Sections titled Conclusion, Summary, Key Takeaways, Recommendations, …, shown on the theme's gradient |
 
 ### Content preservation
 
@@ -67,7 +73,7 @@ DOCX file
   → Blob download (.pptx)
 ```
 
-The preview and the exported file use **the same layout output**, so they match closely. The preview is still an approximation, because fonts and line breaks differ slightly between browsers and office apps.
+The preview and the exported file use **the same layout output**, so they match closely. PptxGenJS cannot write gradient fills, so `generate.ts` writes each gradient as a unique placeholder color and swaps in real `<a:gradFill>` XML after generation. The preview is still an approximation, because fonts and line breaks differ slightly between browsers and office apps.
 
 **Security:** Mammoth's HTML output is never rendered. It's parsed into an inert DOM, and only supported elements and safe text are copied into typed data. Images are kept only as embedded `data:image/...` URIs, and links only if they use `http`, `https` or `mailto`.
 
@@ -90,7 +96,7 @@ src/
     utils/            errors.ts, file-utils.ts
     pipeline.ts       orchestrates the stages for the UI
     settings.ts       presentation settings type + defaults
-  tests/              validation, parser, planner, content-coverage, pptx, style-hints
+  tests/              validation, parser, planner, content-coverage, pptx, style-hints, themes
 scripts/
   docx-builder.ts     tiny .docx writer for test fixtures
   sample-content.ts   content of the bundled sample lecture
@@ -132,7 +138,8 @@ The tests cover these areas:
 - Every planner rule
 - Long-paragraph splitting
 - Content coverage: every word of the sample document must appear on some slide, at every density
-- PPTX output for every theme and both aspect ratios: valid ZIP and XML, native tables, embedded media, correct slide size, nothing positioned off-slide
+- PPTX output for every theme and both aspect ratios: valid ZIP and XML, native tables, real gradient fills, embedded media, correct slide size, nothing positioned off-slide
+- Theme contrast: titles, body text and text on gradients stay readable for every theme, including with custom accent colors and dark backgrounds
 
 ## 7. Build for production
 
@@ -161,10 +168,11 @@ There's no database, API route, server function or secret to configure. `out/` i
 ## 9. Limitations (first version)
 
 - **Rule-based, not AI.** Layouts come from document structure and simple text patterns. Documents with clear Word headings (Heading 1/2/3) give the best results. Unstructured text still converts, but with less layout variety.
-- **The style description understands keywords only.** It recognizes about 25 phrases (themes, colors, dark, warm, colorful, large titles, more diagrams, less/more text). Everything else is ignored.
+- **The style description understands keywords only.** It recognizes about 25 phrases (themes, colors, dark, warm, tech/neon, colorful, large titles, more diagrams, less/more text). Everything else is ignored.
 - **Formatting isn't reproduced.** Fonts, colors, page layout and inline bold or italic inside paragraphs are replaced by the chosen theme. Hyperlink text is kept, but the links are not clickable on the slides.
 - **Some content can't be used.** EMF/WMF images (common for pasted Office drawings), SmartArt, charts, text boxes, footnotes, comments and equations are skipped or reduced to plain text. Skipped images are reported as warnings.
 - **No charts.** Native charts are not created from table data. Tables stay tables.
 - **Nested lists are flattened.** Merged table cells are not preserved.
 - **Fonts depend on the viewer's machine.** Themes use common system fonts (Calibri, Arial, Georgia, Trebuchet MS…). If one is missing, the preview and PowerPoint substitute a similar font, which can change line breaks a little.
+- **Effects depend on the viewer app.** Gradients, shadows and transparency were checked in Microsoft PowerPoint for Mac and in macOS Quick Look. Other apps, such as Google Slides, may simplify shadows.
 - **Legacy `.doc` files are not supported.** Save them as `.docx` first.

@@ -1,6 +1,7 @@
+import type { Shadow } from "@/lib/pptx/draw";
 import { isDark, luminance, mix, normalizeHex, readableOn, shade, tint } from "./color";
 
-export type ThemeId = "academic" | "minimalist" | "modern" | "corporate" | "editorial";
+export type ThemeId = "academic" | "minimalist" | "modern" | "corporate" | "editorial" | "midnight";
 export type Decor = ThemeId;
 export type FontKey = "theme" | "calibri" | "arial" | "georgia" | "cambria" | "trebuchet" | "verdana" | "times";
 
@@ -15,11 +16,16 @@ export interface Theme {
     background: string;
     /** Cards and panels. */
     surface: string;
+    /** Slide titles. */
+    heading: string;
     text: string;
     mutedText: string;
     border: string;
     /** Text color on top of the primary color. */
     onPrimary: string;
+    /** Hero gradient used on covers, section dividers and feature panels. */
+    gradFrom: string;
+    gradTo: string;
   };
   fonts: { heading: string; body: string };
   /** Point sizes at the 16:9 slide width. */
@@ -30,127 +36,177 @@ export interface Theme {
   spacing: { xs: number; sm: number; md: number; lg: number; xl: number };
   divider: "line" | "bar" | "double" | "none";
   decor: Decor;
+  /** Card treatment: a soft shadow (or glow), and whether cards get a hairline border. */
+  look: { shadow: Shadow | null; cardBorder: boolean };
   /** Rotating colors for cards when the "colorful" preference is on. */
   palette: string[];
 }
 
 const spacing = { xs: 0.08, sm: 0.16, md: 0.3, lg: 0.5, xl: 0.8 };
+const softShadow: Shadow = { blur: 14, offset: 3, opacity: 0.12, color: "0F172A" };
 
 export const THEMES: Record<ThemeId, Theme> = {
   academic: {
     id: "academic",
     name: "Academic",
-    description: "Professional and structured, for lectures and coursework.",
+    description: "Navy and gold with serif titles, for lectures and coursework.",
     colors: {
-      primary: "1E3A5F",
+      primary: "1B365D",
       secondary: "3F6C9E",
-      accent: "B8892B",
+      accent: "C1932F",
       background: "FFFFFF",
-      surface: "F3F6FA",
+      surface: "F5F7FB",
+      heading: "1B365D",
       text: "1F2937",
       mutedText: "5B6575",
-      border: "D5DCE6",
+      border: "DCE3EC",
       onPrimary: "FFFFFF",
+      gradFrom: "0F2341",
+      gradTo: "2A5288",
     },
     fonts: { heading: "Georgia", body: "Calibri" },
-    sizes: { coverTitle: 44, sectionTitle: 40, title: 30, subtitle: 20, body: 20, small: 14, label: 12 },
-    radius: 0.08,
+    sizes: { coverTitle: 46, sectionTitle: 42, title: 30, subtitle: 20, body: 20, small: 14, label: 12 },
+    radius: 0.1,
     spacing,
     divider: "line",
     decor: "academic",
-    palette: ["1E3A5F", "3F6C9E", "B8892B", "5B7F95"],
+    look: { shadow: softShadow, cardBorder: false },
+    palette: ["1B365D", "3F6C9E", "C1932F", "5B7F95"],
   },
   minimalist: {
     id: "minimalist",
     name: "Minimalist",
-    description: "Clean, white and spacious with a single quiet accent.",
+    description: "Generous white space, crisp type and one quiet accent.",
     colors: {
       primary: "111827",
       secondary: "6B7280",
       accent: "2563EB",
       background: "FFFFFF",
-      surface: "F6F6F5",
+      surface: "F7F7F6",
+      heading: "111827",
       text: "1F2937",
       mutedText: "6B7280",
       border: "E5E7EB",
       onPrimary: "FFFFFF",
+      gradFrom: "111827",
+      gradTo: "374151",
     },
     fonts: { heading: "Arial", body: "Arial" },
-    sizes: { coverTitle: 48, sectionTitle: 40, title: 28, subtitle: 20, body: 19, small: 14, label: 11 },
+    sizes: { coverTitle: 50, sectionTitle: 44, title: 30, subtitle: 20, body: 19, small: 14, label: 11 },
     radius: 0,
     spacing,
     divider: "none",
     decor: "minimalist",
+    look: { shadow: null, cardBorder: true },
     palette: ["111827", "2563EB", "6B7280", "9CA3AF"],
   },
   modern: {
     id: "modern",
     name: "Modern",
-    description: "Bold typography with a vivid, contemporary palette.",
+    description: "Vivid violet gradients, rounded cards and bold type.",
     colors: {
       primary: "5B21B6",
       secondary: "7C3AED",
       accent: "F59E0B",
-      background: "FAFAFB",
+      background: "FAFAFC",
       surface: "FFFFFF",
+      heading: "2E1065",
       text: "18181B",
       mutedText: "52525B",
-      border: "E4E4E7",
+      border: "E9E5F5",
       onPrimary: "FFFFFF",
+      gradFrom: "4C1D95",
+      gradTo: "C026D3",
     },
     fonts: { heading: "Trebuchet MS", body: "Trebuchet MS" },
-    sizes: { coverTitle: 50, sectionTitle: 46, title: 32, subtitle: 22, body: 20, small: 14, label: 12 },
-    radius: 0.18,
+    sizes: { coverTitle: 52, sectionTitle: 48, title: 32, subtitle: 22, body: 20, small: 14, label: 12 },
+    radius: 0.2,
     spacing,
     divider: "bar",
     decor: "modern",
-    palette: ["5B21B6", "F59E0B", "0EA5E9", "EC4899"],
+    look: { shadow: { blur: 22, offset: 5, opacity: 0.14, color: "4C1D95" }, cardBorder: false },
+    palette: ["7C3AED", "F59E0B", "0EA5E9", "EC4899"],
   },
   corporate: {
     id: "corporate",
     name: "Corporate",
-    description: "Structured business style with clear header bands.",
+    description: "Confident blue header bands and clean business structure.",
     colors: {
       primary: "0F4C81",
       secondary: "2F7DB8",
-      accent: "E07A1F",
+      accent: "F08A24",
       background: "FFFFFF",
-      surface: "EEF3F8",
+      surface: "F2F6FA",
+      heading: "0F2E4F",
       text: "1E293B",
       mutedText: "586374",
-      border: "D3DCE6",
+      border: "D7E0EA",
       onPrimary: "FFFFFF",
+      gradFrom: "0A3560",
+      gradTo: "1F6FB2",
     },
     fonts: { heading: "Calibri", body: "Calibri" },
-    sizes: { coverTitle: 44, sectionTitle: 40, title: 28, subtitle: 20, body: 20, small: 14, label: 12 },
-    radius: 0.04,
+    sizes: { coverTitle: 46, sectionTitle: 42, title: 28, subtitle: 20, body: 20, small: 14, label: 12 },
+    radius: 0.06,
     spacing,
     divider: "bar",
     decor: "corporate",
-    palette: ["0F4C81", "2F7DB8", "E07A1F", "4B8F7A"],
+    look: { shadow: softShadow, cardBorder: false },
+    palette: ["0F4C81", "2F7DB8", "F08A24", "4B8F7A"],
   },
   editorial: {
     id: "editorial",
     name: "Editorial",
-    description: "Refined serif typography inspired by magazine layouts.",
+    description: "Magazine-style serif typography on warm paper.",
     colors: {
       primary: "2B2B2B",
       secondary: "7A6A58",
       accent: "B3402A",
       background: "FBF8F3",
-      surface: "F2ECE2",
+      surface: "F3EDE3",
+      heading: "1F1F1F",
       text: "262626",
       mutedText: "6B645B",
       border: "DDD3C3",
       onPrimary: "FBF8F3",
+      gradFrom: "9E3522",
+      gradTo: "C2553A",
     },
     fonts: { heading: "Georgia", body: "Georgia" },
-    sizes: { coverTitle: 46, sectionTitle: 42, title: 30, subtitle: 20, body: 18, small: 13, label: 11 },
+    sizes: { coverTitle: 50, sectionTitle: 46, title: 32, subtitle: 20, body: 18, small: 13, label: 11 },
     radius: 0,
     spacing,
     divider: "double",
     decor: "editorial",
+    look: { shadow: null, cardBorder: true },
     palette: ["B3402A", "2B2B2B", "7A6A58", "3C6E71"],
+  },
+  midnight: {
+    id: "midnight",
+    name: "Midnight",
+    description: "Dark, high-contrast tech look with glowing cyan accents.",
+    colors: {
+      primary: "6366F1",
+      secondary: "A78BFA",
+      accent: "22D3EE",
+      background: "0B1023",
+      surface: "141B38",
+      heading: "F8FAFC",
+      text: "E2E8F0",
+      mutedText: "94A3C4",
+      border: "27315A",
+      onPrimary: "FFFFFF",
+      gradFrom: "4338CA",
+      gradTo: "0891B2",
+    },
+    fonts: { heading: "Arial", body: "Calibri" },
+    sizes: { coverTitle: 50, sectionTitle: 46, title: 30, subtitle: 20, body: 20, small: 14, label: 12 },
+    radius: 0.14,
+    spacing,
+    divider: "bar",
+    decor: "midnight",
+    look: { shadow: { blur: 24, offset: 0, opacity: 0.35, color: "000000" }, cardBorder: true },
+    palette: ["22D3EE", "A78BFA", "6366F1", "F472B6"],
   },
 };
 
@@ -179,7 +235,9 @@ export interface ThemeOverrides {
   colorful?: boolean;
 }
 
-export interface ResolvedTheme extends Theme {
+export interface ResolvedTheme extends Omit<Theme, "colors"> {
+  /** Theme colors plus `onHero`: text color on top of the hero gradient. */
+  colors: Theme["colors"] & { onHero: string };
   titleScale: number;
   colorful: boolean;
   /** True when the slide background is dark. */
@@ -197,6 +255,9 @@ export function resolveTheme(id: ThemeId, overrides: ThemeOverrides = {}): Resol
     colors.secondary = mix(accent, "FFFFFF", 0.25);
     colors.accent = accent;
     colors.onPrimary = readableOn(accent);
+    colors.heading = isDark(colors.background) ? colors.heading : shade(accent, 0.35);
+    colors.gradFrom = shade(accent, 0.35);
+    colors.gradTo = mix(accent, "FFFFFF", 0.15);
     palette = [accent, mix(accent, "808080", 0.35), shade(accent, 0.3), tint(accent, 0.35)];
   }
 
@@ -211,8 +272,9 @@ export function resolveTheme(id: ThemeId, overrides: ThemeOverrides = {}): Resol
   }
   // Dark backgrounds need a visible primary: lighten dark primaries.
   const darkBg = isDark(colors.background);
+  colors.heading = darkBg ? (isDark(colors.heading) ? "F8FAFC" : colors.heading) : isDark(colors.heading) ? colors.heading : colors.primary;
   if (darkBg && luminance(colors.accent) < 0.2) colors.accent = tint(colors.accent, 0.45);
-  if (darkBg && isDark(colors.primary)) {
+  if (darkBg && isDark(colors.primary) && (bg || accent)) {
     colors.primary = tint(colors.primary, 0.55);
     colors.secondary = tint(colors.secondary, 0.35);
     colors.onPrimary = readableOn(colors.primary);
@@ -223,9 +285,12 @@ export function resolveTheme(id: ThemeId, overrides: ThemeOverrides = {}): Resol
   const font = FONT_OPTIONS.find((f) => f.key === overrides.font);
   if (font?.family) fonts = { heading: font.family, body: font.family };
 
+  const heroMid = mix(colors.gradFrom, colors.gradTo, 0.5);
+  const onHero = isDark(heroMid) ? (isDark(colors.onPrimary) ? "FFFFFF" : colors.onPrimary) : "1F2937";
+
   return {
     ...base,
-    colors,
+    colors: { ...colors, onHero },
     palette,
     fonts,
     titleScale: overrides.titleScale ?? 1,
