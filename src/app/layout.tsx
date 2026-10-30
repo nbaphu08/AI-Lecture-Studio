@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 
-const display = Cormorant_Garamond({ subsets: ["latin", "vietnamese"], weight: ["300", "400", "500"], style: ["normal", "italic"], variable: "--font-display" });
-const label = Jost({ subsets: ["latin"], weight: ["300", "400", "500"], variable: "--font-label" });
+const display = Cormorant_Garamond({ subsets: ["latin", "vietnamese"], weight: ["400", "500", "600", "700"], style: ["normal", "italic"], variable: "--font-display" });
+const label = Jost({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-label" });
 
 export const metadata: Metadata = {
   title: "SlideCraft — Turn documents into beautiful presentations",

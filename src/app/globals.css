@@ -63,15 +63,15 @@ body {
 
 .hero-title {
   font-size: clamp(2.2rem, 12vw, 5.5rem);
-  font-weight: 300;
+  font-weight: 700;
   line-height: 1.02;
   letter-spacing: 0.14em;
   margin-right: -0.14em; /* offsets trailing tracking so the text stays optically centred */
-  background: linear-gradient(180deg, #fffaf0 10%, #e9d9b8 55%, #b89a63 100%);
+  background: linear-gradient(180deg, #ffffff 15%, #fdf6e3 55%, #f3dfa8 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 80px rgb(233 217 184 / 0.18);
+  filter: drop-shadow(0 2px 28px rgb(0 0 0 / 0.65)) drop-shadow(0 0 60px rgb(0 0 0 / 0.45));
 }
 
 .hero-title span {
@@ -97,9 +97,9 @@ body {
   border: 1px solid rgb(233 217 184 / 0.55);
   background: rgb(233 217 184 / 0.06);
   backdrop-filter: blur(10px);
-  color: #f3ece0;
+  color: #ffffff;
   font-size: 0.75rem;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0.34em;
   text-transform: uppercase;
   transition: background-color 0.5s, color 0.5s, border-color 0.5s;

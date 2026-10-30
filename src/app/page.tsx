@@ -18,10 +18,10 @@ export default function LandingPage() {
       <div className="landing-grain absolute inset-0 -z-10" aria-hidden />
 
       <header className="rise flex items-center justify-between px-6 py-7 sm:px-12" style={{ animationDelay: "0.2s" }}>
-        <span className="font-label text-[11px] uppercase tracking-[0.42em] text-[#e9d9b8]">ALS</span>
+        <span className="font-label text-[11px] font-semibold uppercase tracking-[0.42em] text-[#f3dfa8]">ALS</span>
         <Link
           href="/studio"
-          className="font-label text-[11px] uppercase tracking-[0.32em] text-[#f3ece0]/75 transition hover:text-[#e9d9b8] focus:outline-none focus-visible:text-[#e9d9b8]"
+          className="font-label text-[11px] font-medium uppercase tracking-[0.32em] text-white/90 transition hover:text-[#f3dfa8] focus:outline-none focus-visible:text-[#f3dfa8]"
         >
           Open the Studio
         </Link>
@@ -35,7 +35,7 @@ export default function LandingPage() {
         </h1>
 
         <p
-          className="rise mt-8 max-w-[34rem] font-display text-[1.35rem] font-light italic leading-snug text-[#f3ece0]/85 sm:text-[1.7rem]"
+          className="rise mt-8 max-w-[34rem] font-display text-[1.35rem] font-semibold italic leading-snug text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.6)] sm:text-[1.7rem]"
           style={{ animationDelay: "1.1s" }}
         >
           A platform where you can convert breakthrough ideas into eye-catching slides
