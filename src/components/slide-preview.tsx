@@ -87,7 +87,7 @@ export function SlidePreview({ deck, kinds }: Props) {
           if (e.key === "ArrowRight") go(1);
           if (e.key === "ArrowLeft") go(-1);
         }}
-        className="rounded-2xl border border-edge bg-[#05070d]/70 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
+        className="rounded-2xl border border-edge bg-black/45 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
         aria-label="Slide preview. Use the arrow keys to move between slides."
       >
         <div className="mx-auto max-w-4xl overflow-hidden rounded-lg shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] ring-1 ring-white/15">

@@ -3,7 +3,7 @@ import { Layers, ShieldCheck } from "lucide-react";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-20 border-b border-edge bg-[#05070d]/80 backdrop-blur">
+    <header className="sticky top-0 z-20 glass-bar border-b">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link href="/" className="flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500" aria-label="SlideCraft home">
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-on-gold shadow-sm">

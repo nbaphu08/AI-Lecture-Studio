@@ -13,16 +13,16 @@
   --color-brand-700: #fff0c4;
   --color-on-gold: #0b0e16;
 
-  /* Dark surfaces. Text tokens keep >= 7:1 contrast on panel and well. */
-  --color-ink: #f6f2e9;
-  --color-fg: #f6f2e9;
-  --color-fg-soft: #d3d9e6;
-  --color-fg-muted: #a8b3c7;
-  --color-panel: #0c121f;
-  --color-well: #141c2e;
-  --color-well-hi: #1d2842;
-  --color-edge: #2c3750;
-  --color-edge-strong: #4a5877;
+  /* Liquid-glass surfaces: translucent whites over a dark live background. */
+  --color-ink: #ffffff;
+  --color-fg: #ffffff;
+  --color-fg-soft: #e4e8f0;
+  --color-fg-muted: #bcc4d3;
+  --color-panel: rgb(20 23 31 / 0.92);
+  --color-well: rgb(255 255 255 / 0.07);
+  --color-well-hi: rgb(255 255 255 / 0.13);
+  --color-edge: rgb(255 255 255 / 0.14);
+  --color-edge-strong: rgb(255 255 255 / 0.26);
 }
 
 :root {
@@ -30,9 +30,7 @@
 }
 
 body {
-  background:
-    linear-gradient(rgb(5 7 13 / 0.88), rgb(5 7 13 / 0.95)),
-    url("/videos/mountain-stars-poster.jpg") center / cover fixed #05070d;
+  background: #05060a;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -61,6 +59,111 @@ body {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Liquid glass */
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(145deg, rgb(58 62 74 / 0.5), rgb(24 27 36 / 0.62));
+  border: 1px solid rgb(255 255 255 / 0.16);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
+  backdrop-filter: blur(28px) saturate(170%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.28),
+    inset 0 -1px 0 rgb(255 255 255 / 0.06),
+    inset 0 0 0 1px rgb(255 255 255 / 0.03),
+    0 24px 60px -18px rgb(0 0 0 / 0.65);
+}
+
+/* Specular sheen across the top-left edge, like light caught in curved glass. */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 60% at 0% 0%, rgb(255 255 255 / 0.14), transparent 55%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 35%);
+}
+
+.glass-bar {
+  background: rgb(10 12 18 / 0.55);
+  border-color: rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+/* Live background */
+.live-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 120%, #10131f, #05060a 60%);
+}
+
+.live-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.75;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+.live-orb-1 {
+  width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax;
+  background: radial-gradient(circle, #4f46e5, transparent 68%);
+  animation: drift-1 26s ease-in-out infinite alternate;
+}
+.live-orb-2 {
+  width: 40vmax; height: 40vmax; right: -10vmax; top: 10vmax;
+  background: radial-gradient(circle, #0ea5b7, transparent 68%);
+  animation: drift-2 32s ease-in-out infinite alternate;
+}
+.live-orb-3 {
+  width: 36vmax; height: 36vmax; left: 25vmax; bottom: -16vmax;
+  background: radial-gradient(circle, #9333ea, transparent 68%);
+  animation: drift-3 29s ease-in-out infinite alternate;
+}
+.live-orb-4 {
+  width: 22vmax; height: 22vmax; left: 52vw; top: 18vh;
+  background: radial-gradient(circle, #f3c97a, transparent 70%);
+  opacity: 0.42;
+  animation: drift-4 22s ease-in-out infinite alternate;
+}
+
+/* A soft beam of light that slowly rotates across the scene. */
+.live-sweep {
+  position: absolute;
+  inset: -50%;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgb(255 255 255 / 0.05) 25deg, transparent 60deg, transparent 360deg);
+  animation: sweep 40s linear infinite;
+}
+
+.live-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent 85%);
+}
+
+.live-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgb(3 4 8 / 0.75));
+}
+
+@keyframes drift-1 { to { transform: translate(18vw, 14vh) scale(1.15); } }
+@keyframes drift-2 { to { transform: translate(-22vw, 18vh) scale(0.9); } }
+@keyframes drift-3 { to { transform: translate(-14vw, -20vh) scale(1.2); } }
+@keyframes drift-4 { to { transform: translate(-30vw, 30vh) scale(1.3); } }
+@keyframes sweep { to { transform: rotate(360deg); } }
 
 /* Landing page */
 .landing-veil {

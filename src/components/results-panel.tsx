@@ -18,7 +18,7 @@ export function ResultsPanel({ result, onDownload, onRegenerate, busy }: Props) 
   const placed = coverage.assigned.length;
 
   return (
-    <section id="results" className="rounded-3xl border border-edge bg-panel/90 p-5 backdrop-blur sm:p-8" aria-labelledby="results-title">
+    <section id="results" className="glass rounded-3xl p-5 sm:p-8" aria-labelledby="results-title">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <p className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-300">

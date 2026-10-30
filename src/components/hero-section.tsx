@@ -18,7 +18,7 @@ export function HeroSection() {
       <ol className="mt-9 flex flex-wrap items-center justify-center gap-2 sm:gap-3" aria-label="How it works">
         {STEPS.map(({ icon: Icon, label }, i) => (
           <li key={label} className="flex items-center gap-2 sm:gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-edge-strong bg-panel/80 px-4 py-2 text-sm font-medium text-fg-soft backdrop-blur">
+            <span className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-sm font-medium text-fg">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-50 text-[11px] font-semibold text-brand-700">{i + 1}</span>
               <Icon className="h-4 w-4 text-fg-muted" aria-hidden />
               {label}

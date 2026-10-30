@@ -5,6 +5,7 @@ import { AlertCircle, Loader2, Wand2 } from "lucide-react";
 import { DesignSettings } from "@/components/design-settings";
 import { GenerationProgress } from "@/components/generation-progress";
 import { Header } from "@/components/header";
+import { LiveBackground } from "@/components/live-background";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsPanel } from "@/components/results-panel";
 import { UploadDropzone } from "@/components/upload-dropzone";
@@ -20,7 +21,7 @@ type Status = { kind: "idle" } | { kind: "working"; stage: Stage } | { kind: "er
 
 function Card({ step, title, description, children }: { step: number; title: string; description: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl border border-edge bg-panel/90 p-5 backdrop-blur sm:p-7">
+    <section className="glass rounded-3xl p-5 sm:p-7">
       <div className="mb-5 flex items-start gap-3">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-on-gold">{step}</span>
         <div>
@@ -133,6 +134,7 @@ export default function Home() {
 
   return (
     <>
+      <LiveBackground />
       <Header />
       <main className="pb-24">
         <HeroSection />
@@ -151,12 +153,12 @@ export default function Home() {
               />
             </Card>
 
-            <section className="rounded-3xl border border-edge bg-panel/90 p-5 backdrop-blur sm:p-7">
+            <section className="glass rounded-3xl p-5 sm:p-7">
               <button
                 type="button"
                 onClick={generate}
                 disabled={!file || working}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-on-gold shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:bg-edge disabled:text-fg-muted"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-on-gold shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-fg-muted"
               >
                 {working ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Wand2 className="h-5 w-5" aria-hidden />}
                 {working ? "Generating…" : "Generate Presentation"}
@@ -195,7 +197,7 @@ export default function Home() {
           </div>
         )}
       </main>
-      <footer className="border-t border-edge bg-panel/80 py-6 text-center text-xs text-fg-muted">
+      <footer className="glass-bar border-t py-6 text-center text-xs text-fg-muted">
         SlideCraft · Rule-based presentation generator · Runs entirely in your browser
       </footer>
     </>
