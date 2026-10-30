@@ -20,12 +20,12 @@ type Status = { kind: "idle" } | { kind: "working"; stage: Stage } | { kind: "er
 
 function Card({ step, title, description, children }: { step: number; title: string; description: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+    <section className="rounded-3xl border border-edge bg-panel/90 p-5 backdrop-blur sm:p-7">
       <div className="mb-5 flex items-start gap-3">
-        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">{step}</span>
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-semibold text-on-gold">{step}</span>
         <div>
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-          <p className="text-sm text-slate-500">{description}</p>
+          <h2 className="text-base font-semibold text-fg">{title}</h2>
+          <p className="text-sm text-fg-muted">{description}</p>
         </div>
       </div>
       {children}
@@ -151,19 +151,19 @@ export default function Home() {
               />
             </Card>
 
-            <section className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+            <section className="rounded-3xl border border-edge bg-panel/90 p-5 backdrop-blur sm:p-7">
               <button
                 type="button"
                 onClick={generate}
                 disabled={!file || working}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-white shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-on-gold shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:bg-edge disabled:text-fg-muted"
               >
                 {working ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Wand2 className="h-5 w-5" aria-hidden />}
                 {working ? "Generating…" : "Generate Presentation"}
               </button>
-              {!file && <p className="mt-3 text-center text-xs text-slate-500">Upload a document to get started.</p>}
+              {!file && <p className="mt-3 text-center text-xs text-fg-muted">Upload a document to get started.</p>}
               {stale && !working && (
-                <p className="mt-3 text-center text-xs text-amber-700">Settings changed since the last version — generate again to apply them.</p>
+                <p className="mt-3 text-center text-xs text-amber-300">Settings changed since the last version — generate again to apply them.</p>
               )}
               {working && (
                 <div className="mt-4">
@@ -171,7 +171,7 @@ export default function Home() {
                 </div>
               )}
               {status.kind === "error" && (
-                <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   <div>
                     <p>{status.message}</p>
@@ -195,7 +195,7 @@ export default function Home() {
           </div>
         )}
       </main>
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
+      <footer className="border-t border-edge bg-panel/80 py-6 text-center text-xs text-fg-muted">
         SlideCraft · Rule-based presentation generator · Runs entirely in your browser
       </footer>
     </>

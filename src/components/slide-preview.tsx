@@ -59,19 +59,19 @@ export function SlidePreview({ deck, kinds }: Props) {
         type="button"
         onClick={() => go(-1)}
         disabled={safeIndex === 0}
-        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+        className="rounded-lg border border-edge-strong bg-well p-2 text-fg-soft transition hover:bg-well-hi disabled:opacity-40"
         aria-label="Previous slide"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-      <span className="min-w-[4.5rem] text-center text-sm tabular-nums text-slate-600">
+      <span className="min-w-[4.5rem] text-center text-sm tabular-nums text-fg-soft">
         {safeIndex + 1} / {count}
       </span>
       <button
         type="button"
         onClick={() => go(1)}
         disabled={safeIndex === count - 1}
-        className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+        className="rounded-lg border border-edge-strong bg-well p-2 text-fg-soft transition hover:bg-well-hi disabled:opacity-40"
         aria-label="Next slide"
       >
         <ChevronRight className="h-4 w-4" />
@@ -87,21 +87,21 @@ export function SlidePreview({ deck, kinds }: Props) {
           if (e.key === "ArrowRight") go(1);
           if (e.key === "ArrowLeft") go(-1);
         }}
-        className="rounded-2xl bg-slate-100 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
+        className="rounded-2xl border border-edge bg-[#05070d]/70 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
         aria-label="Slide preview. Use the arrow keys to move between slides."
       >
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-lg shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/5">
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-lg shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] ring-1 ring-white/15">
           <SlideCanvas slide={slide} width={deck.w} height={deck.h} />
         </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">{KIND_LABELS[kinds[safeIndex]]} layout</span>
+        <span className="rounded-full bg-well px-2.5 py-1 text-xs font-medium text-fg-soft">{KIND_LABELS[kinds[safeIndex]]} layout</span>
         {nav}
         <button
           type="button"
           onClick={() => setExpanded(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-fg-soft transition hover:bg-well-hi hover:text-fg"
         >
           <Maximize2 className="h-4 w-4" aria-hidden /> Larger preview
         </button>
@@ -117,26 +117,26 @@ export function SlidePreview({ deck, kinds }: Props) {
             aria-selected={i === safeIndex}
             onClick={() => setIndex(i)}
             className={`w-40 shrink-0 rounded-lg p-1 text-left transition sm:w-44 ${
-              i === safeIndex ? "bg-brand-50 ring-2 ring-brand-500" : "hover:bg-slate-100"
+              i === safeIndex ? "bg-brand-50 ring-2 ring-brand-500" : "hover:bg-well-hi"
             }`}
           >
-            <div className="overflow-hidden rounded ring-1 ring-black/10">
+            <div className="overflow-hidden rounded ring-1 ring-white/15">
               <SlideCanvas slide={s} width={deck.w} height={deck.h} />
             </div>
-            <span className="mt-1 block truncate px-0.5 text-[11px] text-slate-500">
+            <span className="mt-1 block truncate px-0.5 text-[11px] text-fg-muted">
               {i + 1}. {s.title}
             </span>
           </button>
         ))}
       </div>
 
-      <p className="mt-2 text-xs text-slate-400">
+      <p className="mt-2 text-xs text-fg-muted">
         The preview is an approximation. Fonts and line breaks may differ slightly in PowerPoint, Google Slides or LibreOffice.
       </p>
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#05070d]/90 p-4 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-label="Larger slide preview"
@@ -158,7 +158,7 @@ export function SlidePreview({ deck, kinds }: Props) {
           >
             <SlideCanvas slide={slide} width={deck.w} height={deck.h} />
           </div>
-          <div className="mt-4 rounded-xl bg-white p-1.5" onClick={(e) => e.stopPropagation()}>
+          <div className="mt-4 rounded-xl border border-edge bg-panel p-1.5" onClick={(e) => e.stopPropagation()}>
             {nav}
           </div>
         </div>

@@ -43,7 +43,7 @@ const DENSITIES: { id: Density; label: string; hint: string }[] = [
 
 function Label({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <label htmlFor={htmlFor} className="mb-2 block text-xs font-semibold uppercase tracking-wide text-fg-muted">
       {children}
     </label>
   );
@@ -63,7 +63,7 @@ function Segmented<T extends string>({
   label: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-1 rounded-xl bg-slate-100 p-1">
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-1 rounded-xl bg-well p-1">
       {options.map((o) => (
         <button
           key={o.id}
@@ -74,7 +74,7 @@ function Segmented<T extends string>({
           disabled={disabled}
           onClick={() => onChange(o.id)}
           className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
-            value === o.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"
+            value === o.id ? "bg-brand-600 text-on-gold shadow-sm" : "text-fg-soft hover:text-fg"
           }`}
         >
           {o.label}
@@ -106,7 +106,7 @@ function Swatches({
         disabled={disabled}
         aria-pressed={value === null}
         className={`h-8 rounded-full border px-3 text-xs font-medium transition ${
-          value === null ? "border-brand-600 bg-brand-50 text-brand-700" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+          value === null ? "border-brand-600 bg-brand-50 text-brand-700" : "border-edge-strong bg-well text-fg-soft hover:border-brand-500/60"
         }`}
       >
         Theme
@@ -121,16 +121,16 @@ function Swatches({
           disabled={disabled}
           onClick={() => onChange(o.value)}
           className={`flex h-8 w-8 items-center justify-center rounded-full border transition ${
-            value === o.value ? "border-brand-600 ring-2 ring-brand-500/30" : "border-slate-200 hover:scale-105"
+            value === o.value ? "border-brand-600 ring-2 ring-brand-500/30" : "border-edge-strong hover:scale-105"
           }`}
           style={{ background: `#${o.value}` }}
         >
-          {value === o.value && <Check className={`h-4 w-4 ${["FFFFFF", "FBF8F3", "F3F4F6"].includes(o.value) ? "text-slate-700" : "text-white"}`} />}
+          {value === o.value && <Check className={`h-4 w-4 ${["FFFFFF", "FBF8F3", "F3F4F6"].includes(o.value) ? "text-[#1e293b]" : "text-white"}`} />}
         </button>
       ))}
       <label
         className={`relative flex h-8 w-8 cursor-pointer items-center justify-center overflow-hidden rounded-full border transition ${
-          custom ? "border-brand-600 ring-2 ring-brand-500/30" : "border-slate-200"
+          custom ? "border-brand-600 ring-2 ring-brand-500/30" : "border-edge-strong"
         }`}
         title={`Custom ${name.toLowerCase()}`}
         style={{ background: custom ? `#${value}` : "conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444)" }}
@@ -150,8 +150,8 @@ function Swatches({
 
 function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
-      <span className="text-sm text-slate-700">{label}</span>
+    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-edge bg-well px-3 py-2.5">
+      <span className="text-sm text-fg-soft">{label}</span>
       <button
         type="button"
         role="switch"
@@ -159,9 +159,9 @@ function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onCh
         aria-label={label}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative h-5 w-9 rounded-full transition ${checked ? "bg-brand-600" : "bg-slate-300"}`}
+        className={`relative h-5 w-9 rounded-full transition ${checked ? "bg-brand-600" : "bg-edge-strong"}`}
       >
-        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${checked ? "left-[18px]" : "left-0.5"}`} />
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full shadow transition-all ${checked ? "left-[18px] bg-on-gold" : "left-0.5 bg-white"}`} />
       </button>
     </label>
   );
@@ -197,18 +197,18 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
                 disabled={disabled}
                 onClick={() => onChange({ themeId: theme.id })}
                 className={`group rounded-xl border p-1.5 text-left transition ${
-                  active ? "border-brand-600 bg-brand-50/50 ring-2 ring-brand-500/25" : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+                  active ? "border-brand-600 bg-brand-50/50 ring-2 ring-brand-500/25" : "border-edge bg-well hover:border-edge-strong"
                 }`}
               >
-                <div className="overflow-hidden rounded-lg ring-1 ring-black/5">
+                <div className="overflow-hidden rounded-lg ring-1 ring-white/15">
                   <SlideCanvas slide={deck.slides[0]} width={deck.w} height={deck.h} />
                 </div>
                 <div className="flex items-center justify-between px-1.5 pb-1 pt-2">
-                  <span className="text-sm font-medium text-slate-900">{theme.name}</span>
+                  <span className="text-sm font-medium text-fg">{theme.name}</span>
                   {active && <Check className="h-4 w-4 text-brand-600" aria-hidden />}
                 </div>
                 <div className="px-1.5 pb-1.5">
-                  <p className="line-clamp-2 text-xs text-slate-500">{theme.description}</p>
+                  <p className="line-clamp-2 text-xs text-fg-muted">{theme.description}</p>
                 </div>
               </button>
             );
@@ -241,7 +241,7 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
             value={settings.font}
             disabled={disabled}
             onChange={(e) => onChange({ font: e.target.value as FontKey })}
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            className="h-10 w-full rounded-xl border border-edge-strong bg-well px-3 text-sm text-fg focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           >
             {FONT_OPTIONS.map((f) => (
               <option key={f.key} value={f.key}>
@@ -268,7 +268,7 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
       <div>
         <Label>Content density</Label>
         <Segmented label="Content density" value={settings.density} options={DENSITIES} onChange={(density) => onChange({ density })} disabled={disabled} />
-        <p className="mt-2 text-xs text-slate-500">{DENSITIES.find((d) => d.id === settings.density)?.hint}. Your text is never rewritten, only divided across slides.</p>
+        <p className="mt-2 text-xs text-fg-muted">{DENSITIES.find((d) => d.id === settings.density)?.hint}. Your text is never rewritten, only divided across slides.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -286,13 +286,13 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
           value={settings.styleHint}
           onChange={(e) => onChange({ styleHint: e.target.value })}
           placeholder="Describe your preferred presentation style… e.g. navy blue, large titles, clean academic style, less text"
-          className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          className="w-full resize-none rounded-xl border border-edge-strong bg-well px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
           {hint.recognized.length > 0 ? (
             <>
               <Sparkles className="h-3.5 w-3.5 text-brand-600" aria-hidden />
-              <span className="text-slate-500">Applied:</span>
+              <span className="text-fg-muted">Applied:</span>
               {hint.recognized.map((r) => (
                 <span key={r} className="rounded-full bg-brand-50 px-2 py-0.5 font-medium text-brand-700">
                   {r}
@@ -300,12 +300,12 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
               ))}
             </>
           ) : (
-            <span className="text-slate-400">
+            <span className="text-fg-muted">
               Recognizes keywords like academic, minimalist, corporate, dark, navy, green, warm, colorful, large titles, more diagrams, less text.
             </span>
           )}
           {hint.hasUnsupported && settings.styleHint.trim() && (
-            <span className="w-full pt-1 text-amber-700">
+            <span className="w-full pt-1 text-amber-300">
               Some words weren’t recognized and will be ignored — the selected settings are used instead.
             </span>
           )}

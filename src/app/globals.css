@@ -2,24 +2,44 @@
 
 @theme {
   --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-500: #5865f2;
-  --color-brand-600: #4752e0;
-  --color-brand-700: #3a43c0;
-  --color-ink: #0f172a;
   --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
   --font-label: var(--font-label), "Jost", ui-sans-serif, sans-serif;
+
+  /* Champagne gold accent shared with the landing page. */
+  --color-brand-50: rgb(243 223 168 / 0.1);
+  --color-brand-100: rgb(243 223 168 / 0.18);
+  --color-brand-500: #f3dfa8;
+  --color-brand-600: #f3dfa8;
+  --color-brand-700: #fff0c4;
+  --color-on-gold: #0b0e16;
+
+  /* Dark surfaces. Text tokens keep >= 7:1 contrast on panel and well. */
+  --color-ink: #f6f2e9;
+  --color-fg: #f6f2e9;
+  --color-fg-soft: #d3d9e6;
+  --color-fg-muted: #a8b3c7;
+  --color-panel: #0c121f;
+  --color-well: #141c2e;
+  --color-well-hi: #1d2842;
+  --color-edge: #2c3750;
+  --color-edge-strong: #4a5877;
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
-  background: #f7f7f9;
+  background:
+    linear-gradient(rgb(5 7 13 / 0.88), rgb(5 7 13 / 0.95)),
+    url("/videos/mountain-stars-poster.jpg") center / cover fixed #05070d;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(243 223 168 / 0.35);
+  color: #fff;
 }
 
 /* Slide canvas: sizes are expressed in container-width units so the preview scales with its box. */

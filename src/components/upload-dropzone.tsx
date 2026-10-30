@@ -38,21 +38,21 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
       />
 
       {file ? (
-        <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
-          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+        <div className="flex items-center gap-4 rounded-2xl border border-edge bg-well p-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
             <FileText className="h-6 w-6" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-slate-900" title={file.name}>
+            <p className="truncate text-sm font-medium text-fg" title={file.name}>
               {file.name}
             </p>
-            <p className="text-xs text-slate-500">{formatFileSize(file.size)} · Word document</p>
+            <p className="text-xs text-fg-muted">{formatFileSize(file.size)} · Word document</p>
           </div>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-edge-strong bg-well px-3 py-1.5 text-xs font-medium text-fg-soft transition hover:bg-well-hi disabled:opacity-50"
           >
             <RefreshCw className="h-3.5 w-3.5" aria-hidden /> <span className="hidden sm:inline">Replace</span>
             <span className="sr-only sm:hidden">Replace file</span>
@@ -61,7 +61,7 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
             type="button"
             onClick={onClear}
             disabled={disabled}
-            className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="rounded-lg p-1.5 text-fg-muted transition hover:bg-well-hi hover:text-fg disabled:opacity-50"
             aria-label="Remove file"
           >
             <X className="h-4 w-4" />
@@ -90,27 +90,27 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
             if (!disabled) pick(e.dataTransfer.files);
           }}
           className={`group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-12 text-center transition ${
-            dragging ? "border-brand-500 bg-brand-50" : "border-slate-300 bg-slate-50/50 hover:border-brand-500/60 hover:bg-brand-50/40"
+            dragging ? "border-brand-500 bg-brand-50" : "border-edge-strong bg-well/60 hover:border-brand-500/60 hover:bg-brand-50/40"
           } focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500`}
         >
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm ring-1 ring-slate-200 transition group-hover:scale-105">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-well-hi text-brand-600 ring-1 ring-edge-strong transition group-hover:scale-105">
             <UploadCloud className="h-7 w-7" aria-hidden />
           </span>
-          <p className="mt-4 text-sm font-medium text-slate-900">
+          <p className="mt-4 text-sm font-medium text-fg">
             Drag and drop your Word document, or <span className="text-brand-600 underline-offset-2 group-hover:underline">browse</span>
           </p>
-          <p className="mt-1 text-xs text-slate-500">.docx files up to {MAX_FILE_SIZE_MB} MB</p>
+          <p className="mt-1 text-xs text-fg-muted">.docx files up to {MAX_FILE_SIZE_MB} MB</p>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-200">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {error}
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-fg-muted">
         <span className="inline-flex items-center gap-1.5">
           <Lock className="h-3.5 w-3.5" aria-hidden />
           Processed locally in your browser — nothing is uploaded.
@@ -126,7 +126,7 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
           </button>
         )}
       </div>
-      <p className="mt-2 text-xs leading-relaxed text-slate-400">
+      <p className="mt-2 text-xs leading-relaxed text-fg-muted">
         SlideCraft extracts your content and redesigns it as slides; the original Word formatting is not reproduced exactly.
       </p>
     </div>
