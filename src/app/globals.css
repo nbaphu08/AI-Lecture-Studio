@@ -64,15 +64,18 @@ body {
 .glass {
   position: relative;
   isolation: isolate;
-  background: linear-gradient(145deg, rgb(38 42 50 / 0.66), rgb(16 19 25 / 0.78));
-  border: 1px solid rgb(255 255 255 / 0.16);
-  -webkit-backdrop-filter: blur(28px) saturate(170%);
-  backdrop-filter: blur(28px) saturate(170%);
+  /* Light tint: the clarity comes from the backdrop, which is darkened and saturated rather than painted over. */
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.02) 45%, rgb(14 17 23 / 0.28));
+  border: 1px solid rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(0.5) contrast(1.05);
+  backdrop-filter: blur(22px) saturate(190%) brightness(0.5) contrast(1.05);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.28),
-    inset 0 -1px 0 rgb(255 255 255 / 0.06),
-    inset 0 0 0 1px rgb(255 255 255 / 0.03),
-    0 24px 60px -18px rgb(0 0 0 / 0.65);
+    inset 0 1.5px 0 rgb(255 255 255 / 0.55),
+    inset 1.5px 0 0 rgb(255 255 255 / 0.18),
+    inset 0 -1.5px 0 rgb(255 255 255 / 0.12),
+    inset 0 0 36px rgb(255 255 255 / 0.07),
+    0 1px 2px rgb(0 0 0 / 0.25),
+    0 30px 70px -20px rgb(0 0 0 / 0.6);
 }
 
 /* Specular sheen across the top-left edge, like light caught in curved glass. */
@@ -84,15 +87,31 @@ body {
   border-radius: inherit;
   pointer-events: none;
   background:
-    radial-gradient(120% 60% at 0% 0%, rgb(255 255 255 / 0.14), transparent 55%),
-    linear-gradient(180deg, rgb(255 255 255 / 0.05), transparent 35%);
+    radial-gradient(90% 45% at 12% 0%, rgb(255 255 255 / 0.28), transparent 60%),
+    radial-gradient(60% 40% at 100% 100%, rgb(255 255 255 / 0.1), transparent 70%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 30%);
+}
+
+/* Rim light: a bright hairline on the top-left and bottom-right edges that fades through the middle. */
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.06) 32%, rgb(255 255 255 / 0.03) 62%, rgb(255 255 255 / 0.45));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
 }
 
 .glass-bar {
-  background: rgb(10 12 18 / 0.7);
-  border-color: rgb(255 255 255 / 0.1);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  backdrop-filter: blur(24px) saturate(160%);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(14 17 23 / 0.2));
+  border-color: rgb(255 255 255 / 0.14);
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(0.42);
+  backdrop-filter: blur(20px) saturate(190%) brightness(0.42);
 }
 
 /* Live background */
