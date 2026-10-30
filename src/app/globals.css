@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-500: #5865f2;
+  --color-brand-600: #4752e0;
+  --color-brand-700: #3a43c0;
+  --color-ink: #0f172a;
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: #f7f7f9;
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Slide canvas: sizes are expressed in container-width units so the preview scales with its box. */
+.slide-canvas {
+  container-type: inline-size;
+  position: relative;
+  overflow: hidden;
+}
+
+.slide-canvas .shape-text p {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
