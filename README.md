@@ -81,14 +81,17 @@ The preview and the exported file use **the same layout output**, so they match 
 
 ```text
 src/
-  app/                layout.tsx, page.tsx, globals.css, icon.svg
+  app/                layout.tsx, page.tsx (landing), landing.css, studio/page.tsx,
+                      globals.css, icon.svg
   components/         header, hero-section, upload-dropzone, design-settings,
                       generation-progress, results-panel, slide-preview, slide-canvas
+    landing/          scroll-driven landing page: landing-nav, hero, problem
+                      (before/after demo), template-gallery (pinned), final-cta
   lib/
     docx/             parser.ts, types.ts, validation.ts
     slides/           planner.ts, content-analysis.ts, types.ts
     design/           themes.ts, tokens.ts, color.ts, text-utils.ts, layout-utils.ts,
-                      style-hints.ts, demo-plan.ts
+                      style-hints.ts, demo-plan.ts, showcase.ts (landing sample decks)
     pptx/             compose.ts, draw.ts, generate.ts
       layouts/        cover, section-divider, content (standard + bullets), definition,
                       two-column, comparison, process, timeline, table, image-text,
