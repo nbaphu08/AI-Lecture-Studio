@@ -200,7 +200,7 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
                   active ? "border-brand-600 bg-brand-50/50 ring-2 ring-brand-500/25" : "border-edge bg-well hover:border-edge-strong"
                 }`}
               >
-                <div className="overflow-hidden rounded-lg ring-1 ring-white/15">
+                <div className="overflow-hidden rounded-lg ring-1 ring-black/10">
                   <SlideCanvas slide={deck.slides[0]} width={deck.w} height={deck.h} />
                 </div>
                 <div className="flex items-center justify-between px-1.5 pb-1 pt-2">
@@ -305,7 +305,7 @@ export function DesignSettings({ settings, onChange, disabled }: Props) {
             </span>
           )}
           {hint.hasUnsupported && settings.styleHint.trim() && (
-            <span className="w-full pt-1 text-amber-300">
+            <span className="w-full pt-1 text-amber-700">
               Some words weren’t recognized and will be ignored — the selected settings are used instead.
             </span>
           )}

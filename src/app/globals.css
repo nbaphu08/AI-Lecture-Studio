@@ -1,43 +1,43 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
-  --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
-  --font-label: var(--font-label), "Jost", ui-sans-serif, sans-serif;
+  --font-sans: var(--font-ui), ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-display), Georgia, serif;
 
-  /* Champagne gold accent shared with the landing page. */
-  --color-brand-50: rgb(243 223 168 / 0.1);
-  --color-brand-100: rgb(243 223 168 / 0.18);
-  --color-brand-500: #f3dfa8;
-  --color-brand-600: #f3dfa8;
-  --color-brand-700: #fff0c4;
-  --color-on-gold: #0b0e16;
+  /* Accent shared with the landing page. */
+  --color-brand-50: rgb(47 84 235 / 0.08);
+  --color-brand-100: rgb(47 84 235 / 0.14);
+  --color-brand-500: #5b7bff;
+  --color-brand-600: #2f54eb;
+  --color-brand-700: #2443c7;
+  --color-on-gold: #ffffff;
 
-  /* Liquid-glass surfaces: translucent whites over a dark live background. */
-  --color-ink: #ffffff;
-  --color-fg: #ffffff;
-  --color-fg-soft: #e4e8f0;
-  --color-fg-muted: #cdd4df;
-  --color-panel: rgb(20 23 31 / 0.92);
-  --color-well: rgb(255 255 255 / 0.07);
-  --color-well-hi: rgb(255 255 255 / 0.13);
-  --color-edge: rgb(255 255 255 / 0.14);
-  --color-edge-strong: rgb(255 255 255 / 0.26);
+  /* Light surfaces: white cards over a soft indigo gradient. */
+  --color-ink: #0a0c10;
+  --color-fg: #0a0c10;
+  --color-fg-soft: #2a2f3a;
+  --color-fg-muted: #5c6371;
+  --color-panel: rgb(255 255 255 / 0.96);
+  --color-well: rgb(10 12 16 / 0.035);
+  --color-well-hi: rgb(255 255 255 / 0.8);
+  --color-edge: rgb(10 12 16 / 0.1);
+  --color-edge-strong: rgb(10 12 16 / 0.2);
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background: #05060a;
+  background: #f5f6f8;
   color: var(--color-ink);
   -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: rgb(243 223 168 / 0.35);
-  color: #fff;
+  background: rgb(47 84 235 / 0.16);
 }
 
 /* Slide canvas: sizes are expressed in container-width units so the preview scales with its box. */
@@ -60,86 +60,30 @@ body {
   }
 }
 
-/* Liquid glass */
+/* Frosted white cards */
 .glass {
-  position: relative;
-  isolation: isolate;
-  /* Light tint: the clarity comes from the backdrop, which is darkened and saturated rather than painted over. */
-  background: linear-gradient(145deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.02) 45%, rgb(14 17 23 / 0.28));
-  border: 1px solid rgb(255 255 255 / 0.1);
-  -webkit-backdrop-filter: blur(22px) saturate(190%) brightness(0.5) contrast(1.05);
-  backdrop-filter: blur(22px) saturate(190%) brightness(0.5) contrast(1.05);
+  background: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.9);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
   box-shadow:
-    inset 0 1.5px 0 rgb(255 255 255 / 0.55),
-    inset 1.5px 0 0 rgb(255 255 255 / 0.18),
-    inset 0 -1.5px 0 rgb(255 255 255 / 0.12),
-    inset 0 0 36px rgb(255 255 255 / 0.07),
-    0 1px 2px rgb(0 0 0 / 0.25),
-    0 30px 70px -20px rgb(0 0 0 / 0.6);
-}
-
-/* Specular sheen across the top-left edge, like light caught in curved glass. */
-.glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(90% 45% at 12% 0%, rgb(255 255 255 / 0.28), transparent 60%),
-    radial-gradient(60% 40% at 100% 100%, rgb(255 255 255 / 0.1), transparent 70%),
-    linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 30%);
-}
-
-/* Rim light: a bright hairline on the top-left and bottom-right edges that fades through the middle. */
-.glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1.5px;
-  pointer-events: none;
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.75), rgb(255 255 255 / 0.06) 32%, rgb(255 255 255 / 0.03) 62%, rgb(255 255 255 / 0.45));
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    0 1px 2px rgb(10 12 16 / 0.06),
+    0 14px 34px -14px rgb(10 12 16 / 0.16),
+    0 40px 80px -40px rgb(47 84 235 / 0.22);
 }
 
 .glass-bar {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(14 17 23 / 0.2));
-  border-color: rgb(255 255 255 / 0.14);
-  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.1);
-  -webkit-backdrop-filter: blur(20px) saturate(190%) brightness(0.42);
-  backdrop-filter: blur(20px) saturate(190%) brightness(0.42);
+  background: rgb(255 255 255 / 0.72);
+  border-color: rgb(10 12 16 / 0.08);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  backdrop-filter: blur(18px) saturate(160%);
 }
 
-/* Live background */
+/* Gradient backdrop */
 .live-bg {
   position: fixed;
   inset: 0;
   z-index: -10;
   overflow: hidden;
-  background: #2a2a2a;
-}
-
-.live-photo {
-  position: absolute;
-  inset: -4%;
-  /* The image is pre-blurred so only its tonal bands remain. */
-  background: url("/images/coast-bg.jpg") center / cover no-repeat;
-  animation: drift 48s ease-in-out infinite alternate;
-  will-change: transform;
-}
-
-/* Soft wash that lifts the tones slightly without darkening them. */
-.live-haze {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 45%, rgb(0 0 0 / 0.18));
-}
-
-@keyframes drift {
-  from { transform: scale(1) translate(0, 0); }
-  to { transform: scale(1.08) translate(-1.5%, -1%); }
+  background: #f5f6f8;
 }

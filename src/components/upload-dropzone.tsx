@@ -104,7 +104,7 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
       )}
 
       {error && (
-        <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <p role="alert" className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {error}
         </p>

@@ -10,8 +10,8 @@ export function HeroSection() {
   return (
     <section className="mx-auto max-w-6xl px-4 pb-10 pt-14 text-center sm:px-6 sm:pt-20">
       <div className="glass mx-auto max-w-4xl rounded-[2rem] px-6 py-10 sm:px-12 sm:py-12">
-        <h1 className="mx-auto max-w-3xl font-display text-5xl font-bold tracking-tight text-ink sm:text-6xl">
-          From Documents to <span className="text-brand-600">Beautiful Presentations</span>
+        <h1 className="mx-auto max-w-3xl font-display text-5xl font-normal tracking-tight text-ink sm:text-6xl">
+          From Documents to <span className="font-display font-normal italic text-brand-600">Beautiful Presentations</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-fg-soft sm:text-lg">
           Upload your Word document and transform it into a professionally designed PowerPoint presentation in just a few clicks.

@@ -158,14 +158,14 @@ export default function Home() {
                 type="button"
                 onClick={generate}
                 disabled={!file || working}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-on-gold shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-fg-muted"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-on-gold shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:bg-black/10 disabled:text-fg-muted"
               >
                 {working ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden /> : <Wand2 className="h-5 w-5" aria-hidden />}
                 {working ? "Generating…" : "Generate Presentation"}
               </button>
               {!file && <p className="mt-3 text-center text-xs text-fg-muted">Upload a document to get started.</p>}
               {stale && !working && (
-                <p className="mt-3 text-center text-xs text-amber-300">Settings changed since the last version — generate again to apply them.</p>
+                <p className="mt-3 text-center text-xs text-amber-700">Settings changed since the last version — generate again to apply them.</p>
               )}
               {working && (
                 <div className="mt-4">
@@ -173,7 +173,7 @@ export default function Home() {
                 </div>
               )}
               {status.kind === "error" && (
-                <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
+                <div role="alert" className="mt-4 flex items-start gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   <div>
                     <p>{status.message}</p>

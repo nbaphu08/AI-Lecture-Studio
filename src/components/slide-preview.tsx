@@ -87,10 +87,10 @@ export function SlidePreview({ deck, kinds }: Props) {
           if (e.key === "ArrowRight") go(1);
           if (e.key === "ArrowLeft") go(-1);
         }}
-        className="rounded-2xl border border-edge bg-black/45 p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
+        className="rounded-2xl border border-edge bg-black/[0.04] p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 sm:p-6"
         aria-label="Slide preview. Use the arrow keys to move between slides."
       >
-        <div className="mx-auto max-w-4xl overflow-hidden rounded-lg shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] ring-1 ring-white/15">
+        <div className="mx-auto max-w-4xl overflow-hidden rounded-lg shadow-[0_10px_40px_-12px_rgba(15,23,42,0.35)] ring-1 ring-black/10">
           <SlideCanvas slide={slide} width={deck.w} height={deck.h} />
         </div>
       </div>
@@ -120,7 +120,7 @@ export function SlidePreview({ deck, kinds }: Props) {
               i === safeIndex ? "bg-brand-50 ring-2 ring-brand-500" : "hover:bg-well-hi"
             }`}
           >
-            <div className="overflow-hidden rounded ring-1 ring-white/15">
+            <div className="overflow-hidden rounded ring-1 ring-black/10">
               <SlideCanvas slide={s} width={deck.w} height={deck.h} />
             </div>
             <span className="mt-1 block truncate px-0.5 text-[11px] text-fg-muted">

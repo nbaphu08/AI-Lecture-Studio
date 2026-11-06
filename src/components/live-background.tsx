@@ -1,9 +1,10 @@
-/** Fixed blurred coastline backdrop behind the liquid-glass panels, with a slow drift so the page feels alive. */
+import { Component as GradientBackground } from "@/components/ui/gradient-background-4";
+
+/** Fixed light gradient backdrop behind the studio, matching the landing page. */
 export function LiveBackground() {
   return (
     <div className="live-bg" aria-hidden>
-      <span className="live-photo" />
-      <span className="live-haze" />
+      <GradientBackground />
     </div>
   );
 }

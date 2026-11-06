@@ -14,7 +14,7 @@ export function Header() {
             <p className="hidden text-xs text-fg-muted sm:block">Turn your documents into beautiful presentations.</p>
           </div>
         </Link>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-300">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-700">
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
           Your files stay on your device.
         </span>

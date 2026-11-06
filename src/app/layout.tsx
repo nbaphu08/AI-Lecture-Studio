@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost } from "next/font/google";
+import { Geist, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
-const display = Cormorant_Garamond({ subsets: ["latin", "vietnamese"], weight: ["400", "500", "600", "700"], style: ["normal", "italic"], variable: "--font-display" });
-const label = Jost({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-label" });
+const ui = Geist({ subsets: ["latin", "vietnamese"], variable: "--font-ui" });
+const display = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-display" });
 
 export const metadata: Metadata = {
   title: "SlideCraft — Turn documents into beautiful presentations",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${display.variable} ${label.variable}`}>
+    <html lang="en" className={`${ui.variable} ${display.variable}`}>
       <body className="min-h-screen font-sans">{children}</body>
     </html>
   );

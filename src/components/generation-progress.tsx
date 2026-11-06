@@ -16,7 +16,7 @@ export function GenerationProgress({ stage }: { stage: Stage }) {
             <li key={s.id} className={`flex items-center gap-2.5 text-sm ${done ? "text-fg-muted" : active ? "font-medium text-fg" : "text-fg-muted"}`}>
               <span className="flex h-5 w-5 items-center justify-center">
                 {done ? (
-                  <Check className="h-4 w-4 text-emerald-400" aria-hidden />
+                  <Check className="h-4 w-4 text-emerald-600" aria-hidden />
                 ) : active ? (
                   <Loader2 className="h-4 w-4 animate-spin text-brand-600" aria-hidden />
                 ) : (
