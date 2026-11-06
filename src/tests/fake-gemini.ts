@@ -49,17 +49,21 @@ export function fakeGemini(options: FakeOptions = {}): JsonGenerator & { calls: 
 
     const sections = parseSections(request.prompt);
     if ("sections" in (request.jsonSchema as { properties: object }).properties) {
+      const condense = request.prompt.includes("Consolidate them into a SHORTER");
       return JSON.stringify({
         sections: sections.map((s) => ({
           sectionId: s.id,
           topic: s.heading ?? "Introduction",
-          summary: s.lines[0] ?? "Empty section.",
-          points: s.lines.slice(0, 6).map((text) => ({ kind: "concept", text, importance: "high" })),
+          summary: condense ? (s.heading ?? s.id) : (s.lines[0] ?? "Empty section."),
+          points: s.lines.slice(condense ? 1 : 0, condense ? 2 : 6).map((text) => ({ kind: "concept", text: condense ? text.slice(0, 200) : text, importance: "high" })),
         })),
       });
     }
     const ids = sections.map((s) => s.id);
-    const slides = [{ id: "slide-001", layout: "title", title: "Generated Lecture", sourceSections: ids.slice(0, 1) }];
+    const partNote = /THIS IS PART (\d+) OF (\d+)/.exec(request.prompt);
+    const wantCover = !partNote || request.prompt.includes("Slide 1 is the title slide");
+    const wantTakeaways = !partNote || request.prompt.includes("End with a key-takeaways slide");
+    const slides: Record<string, unknown>[] = wantCover ? [{ id: "slide-001", layout: "title", title: "Generated Lecture", sourceSections: ids.slice(0, 1) }] : [];
     sections.forEach((s) => {
       for (let i = 0; i < Math.max(1, Math.ceil(s.lines.length / per)); i++) {
         const content = s.lines.slice(i * per, (i + 1) * per).map((text) => ({ text, importance: "high" }));
@@ -74,13 +78,14 @@ export function fakeGemini(options: FakeOptions = {}): JsonGenerator & { calls: 
       }
     });
     const last = sections[sections.length - 1];
-    slides.push({
+    if (wantTakeaways) slides.push({
       id: `slide-${String(slides.length + 1).padStart(3, "0")}`,
       layout: "key-takeaways",
       title: "Key takeaways",
       content: (last?.lines.slice(0, 3) ?? ["Review the material."]).map((text) => ({ text, importance: "high" })),
       sourceSections: last ? [last.id] : [],
     } as never);
+    // Part plans are planned from digests that may carry no title; the first part supplies the deck title.
     return JSON.stringify({ presentationTitle: "Generated Lecture", subtitle: "From the source document", slides });
   };
   return Object.assign(fn, { calls });

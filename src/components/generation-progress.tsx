@@ -1,7 +1,7 @@
 import { Check, Loader2 } from "lucide-react";
 import { STAGES, type Stage } from "@/lib/pipeline";
 
-export function GenerationProgress({ stage, skipped = [] }: { stage: Stage; skipped?: Stage[] }) {
+export function GenerationProgress({ stage, detail, skipped = [] }: { stage: Stage; detail?: string; skipped?: Stage[] }) {
   const current = STAGES.findIndex((s) => s.id === stage);
   return (
     <div aria-live="polite" className="rounded-xl border border-edge bg-well p-4">
@@ -28,6 +28,7 @@ export function GenerationProgress({ stage, skipped = [] }: { stage: Stage; skip
               </span>
               {s.label}
               {notNeeded && <span className="text-xs">(not needed)</span>}
+              {active && detail && <span className="text-xs font-normal text-fg-muted">· {detail}</span>}
               {active && <span className="sr-only">(in progress)</span>}
             </li>
           );

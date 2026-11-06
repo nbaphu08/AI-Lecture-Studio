@@ -155,7 +155,12 @@ export async function withRetries<T>(fn: () => Promise<T>, options: RetryOptions
       const c = classifyError(raw);
       if (signal?.aborted) throw aiError("timeout", raw);
       const wait = c.retryAfterMs ?? baseDelayMs * 2 ** attempt * (0.75 + random() * 0.5);
-      if (!c.retryable || attempt >= maxRetries || wait > maxDelayMs) throw c.error;
+      if (!c.retryable || attempt >= maxRetries || wait > maxDelayMs) {
+        // Keep the retry advice so a caller (the browser job runner) can decide to try again later.
+        c.error.retryable = c.retryable;
+        c.error.retryAfterMs = c.retryAfterMs;
+        throw c.error;
+      }
       await sleep(wait, signal);
     }
   }

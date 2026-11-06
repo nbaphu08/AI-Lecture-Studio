@@ -5,7 +5,9 @@ import type { ComposedDeck } from "@/lib/pptx/draw";
 import { generatePptxBlob } from "@/lib/pptx/generate";
 import { inspectPptx } from "@/lib/pptx/pptx-utils";
 import { composeValidated, issueWarnings } from "@/lib/pptx/slide-validator";
-import { requestAiPlan, type AiPlanResult } from "@/lib/analyze-client";
+import { analyzeDocumentJob, createJobStore, type JobStats, type JobStore } from "@/lib/analysis-job";
+import type { AiPlanResult } from "@/lib/analyze-client";
+import type { Stage } from "@/lib/stages";
 import { aiPlanToDeckPlan } from "@/lib/slides/ai-plan";
 import type { EffectiveSettings, PresentationSettings } from "@/lib/settings";
 import { planSlides } from "@/lib/slides/planner";
@@ -13,16 +15,8 @@ import type { DeckPlan } from "@/lib/slides/types";
 import { AppError } from "@/lib/utils/errors";
 import { baseName, toFileStem } from "@/lib/utils/file-utils";
 
-export type Stage = "reading" | "analyzing" | "summarizing" | "planning" | "generating" | "validating";
-
-export const STAGES: { id: Stage; label: string }[] = [
-  { id: "reading", label: "Reading document" },
-  { id: "analyzing", label: "Analyzing content" },
-  { id: "summarizing", label: "Summarizing sections" },
-  { id: "planning", label: "Planning slides" },
-  { id: "generating", label: "Generating PowerPoint" },
-  { id: "validating", label: "Validating presentation" },
-];
+export { STAGES, type Stage } from "@/lib/stages";
+export type OnStage = (stage: Stage, detail?: string) => void;
 
 export interface GenerationResult {
   plan: DeckPlan;
@@ -31,6 +25,8 @@ export interface GenerationResult {
   downloadName: string;
   settings: EffectiveSettings;
   planner: "ai" | "basic";
+  /** Request counts and chunking details of the AI analysis (absent when a cached plan was reused). */
+  jobStats?: JobStats;
 }
 
 export interface BuildOptions {
@@ -39,14 +35,21 @@ export interface BuildOptions {
   /** Previously received AI plan for the same document and planning inputs; skips the AI request. */
   cachedAiPlan?: AiPlanResult;
   onAiPlan?: (result: AiPlanResult) => void;
-  /** Stages the AI service did not need (e.g. summarizing for a short document) are reported here. */
+  /** Stages the AI analysis did not need (e.g. consolidating for a short document) are reported here. */
   onSkipped?: (stages: Stage[]) => void;
+  /** Intermediate results of a large-document analysis; reuse the same store to resume after a failure. */
+  store?: JobStore;
+  /** Override for tests: where the AI endpoints live and how to fetch them. */
+  baseUrl?: string;
+  fetchImpl?: typeof fetch;
+  signal?: AbortSignal;
+  sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
 }
 
 /** Let the browser paint progress updates between the synchronous pipeline stages. */
 const nextFrame = () => new Promise<void>((resolve) => setTimeout(resolve, 120));
 
-export async function readDocument(file: File, onStage: (s: Stage) => void): Promise<ParsedDocument> {
+export async function readDocument(file: File, onStage: OnStage): Promise<ParsedDocument> {
   onStage("reading");
   await nextFrame();
   return parseDocx(file);
@@ -56,12 +59,13 @@ export async function buildPresentation(
   doc: ParsedDocument,
   fileName: string,
   rawSettings: PresentationSettings,
-  onStage: (s: Stage) => void,
+  onStage: OnStage,
   options: BuildOptions = {},
 ): Promise<GenerationResult> {
   const settings = resolveSettings(rawSettings);
   const planner = options.planner ?? "ai";
   let plan: DeckPlan;
+  let jobStats: JobStats | undefined;
 
   if (planner === "basic") {
     onStage("planning");
@@ -75,16 +79,20 @@ export async function buildPresentation(
   } else {
     let ai = options.cachedAiPlan;
     if (!ai) {
-      const seen = new Set<Stage>();
-      ai = await requestAiPlan(
-        doc,
-        { density: settings.density, preferDiagrams: settings.preferDiagrams, fileName },
-        (stage) => {
-          seen.add(stage);
-          onStage(stage);
-        },
-      );
-      if (!seen.has("summarizing")) options.onSkipped?.(["summarizing"]);
+      const job = await analyzeDocumentJob(doc, {
+        density: settings.density,
+        preferDiagrams: settings.preferDiagrams,
+        fileName,
+        store: options.store ?? createJobStore(),
+        onProgress: onStage,
+        baseUrl: options.baseUrl,
+        fetchImpl: options.fetchImpl,
+        signal: options.signal,
+        sleep: options.sleep,
+      });
+      ai = { plan: job.plan, warnings: job.warnings, model: job.model };
+      jobStats = job.stats;
+      options.onSkipped?.(job.stats.consolidationPasses === 0 ? ["consolidating"] : []);
       options.onAiPlan?.(ai);
     }
     try {
@@ -120,5 +128,5 @@ export async function buildPresentation(
     warnings: [...fitted.plan.warnings, ...issueWarnings(fitted.plan, fitted.issues)],
   };
   const stem = toFileStem(finalPlan.title, toFileStem(baseName(fileName)));
-  return { plan: finalPlan, deck: fitted.deck, blob, downloadName: `${stem}.pptx`, settings, planner };
+  return { plan: finalPlan, deck: fitted.deck, blob, downloadName: `${stem}.pptx`, settings, planner, jobStats };
 }

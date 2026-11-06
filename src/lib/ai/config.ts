@@ -13,6 +13,12 @@ export interface AiConfig {
   singleCallChars: number;
   /** Target size of one chunk when a document needs several requests. */
   chunkChars: number;
+  /** Characters of the previous chunk repeated as read-only context at the start of the next one. */
+  chunkOverlapChars: number;
+  /** Largest summarized outline passed to the final planning request; bigger ones are consolidated first. */
+  planInputChars: number;
+  /** Most chunks accepted for one document. */
+  maxChunks: number;
   /** Upper bound for tokens in one answer (includes thinking tokens). Must not exceed the model's output limit. */
   maxOutputTokens: number;
   /** Secret that enables /api/diagnostics in production. Unset = the endpoint is disabled there. */
@@ -25,8 +31,10 @@ export interface AiConfig {
   requestTimeoutMs: number;
   /** Overall deadline for one analysis (must stay below the route's maxDuration). */
   totalTimeoutMs: number;
-  /** Best-effort per-IP limit: requests per window. */
+  /** Best-effort per-IP limit: whole-document requests per window. */
   rateLimitMax: number;
+  /** Best-effort per-IP limit for the individual chunk/consolidate/plan requests of large documents. */
+  stepRateLimitMax: number;
   rateLimitWindowMs: number;
   /** Best-effort cap on analyses running at once in this server instance. */
   maxInFlight: number;
@@ -51,17 +59,21 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     // GEMINI_API_KEY is preferred; GOOGLE_API_KEY (the name the Google SDK itself uses) also works.
     apiKey: env.GEMINI_API_KEY?.trim() || env.GOOGLE_API_KEY?.trim() || undefined,
     model: env.GEMINI_MODEL?.trim() || DEFAULT_MODEL,
-    maxDocChars: int(env.AI_MAX_DOC_CHARS, 300_000, 5_000, 2_000_000),
+    maxDocChars: int(env.AI_MAX_DOC_CHARS, 1_000_000, 5_000, 4_000_000),
     singleCallChars: int(env.AI_SINGLE_CALL_CHARS, 45_000, 4_000, 400_000),
     chunkChars,
+    chunkOverlapChars: int(env.AI_CHUNK_OVERLAP_CHARS, 400, 0, Math.floor(chunkChars / 4)),
+    planInputChars: int(env.AI_PLAN_INPUT_CHARS, 60_000, 8_000, 300_000),
+    maxChunks: int(env.AI_MAX_CHUNKS, 80, 1, 400),
     maxOutputTokens: int(env.AI_MAX_OUTPUT_TOKENS, 32_768, 1_024, 65_536),
     diagnosticsToken: env.DIAGNOSTICS_TOKEN?.trim() || undefined,
-    concurrency: int(env.AI_CONCURRENCY, 1, 1, 4),
+    concurrency: int(env.AI_CONCURRENCY, 2, 1, 6),
     maxRetries: int(env.AI_MAX_RETRIES, 3, 0, 6),
     requestTimeoutMs: int(env.AI_REQUEST_TIMEOUT_MS, 90_000, 5_000, 280_000),
     totalTimeoutMs: int(env.AI_TOTAL_TIMEOUT_MS, 270_000, 10_000, 290_000),
     rateLimitMax: int(env.RATE_LIMIT_MAX, 8, 1, 1000),
+    stepRateLimitMax: int(env.RATE_LIMIT_STEP_MAX, 200, 1, 5000),
     rateLimitWindowMs: int(env.RATE_LIMIT_WINDOW_MS, 10 * 60_000, 1_000, 24 * 3_600_000),
-    maxInFlight: int(env.MAX_IN_FLIGHT, 3, 1, 50),
+    maxInFlight: int(env.MAX_IN_FLIGHT, 6, 1, 100),
   };
 }

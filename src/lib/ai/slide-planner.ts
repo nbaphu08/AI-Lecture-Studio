@@ -17,6 +17,7 @@ export interface PlanInput {
   preferDiagrams: boolean;
   documentTitle?: string;
   fileName?: string;
+  part?: { index: number; total: number };
   ctx: ValidationContext;
 }
 
@@ -43,6 +44,7 @@ export async function planWithAi(generate: JsonGenerator, input: PlanInput, sign
     preferDiagrams: input.preferDiagrams,
     documentTitle: input.documentTitle,
     fileName: input.fileName,
+    part: input.part,
   });
   const request = { system: PLANNER_SYSTEM, prompt, jsonSchema: PLAN_JSON_SCHEMA, maxOutputTokens: 40_000 };
 

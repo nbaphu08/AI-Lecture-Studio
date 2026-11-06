@@ -3,7 +3,7 @@ import { analyzeRequestSchema } from "@/lib/document/wire";
 import { analyzeDocument } from "./analyze-service";
 import type { AiConfig } from "./config";
 import { createGeminiGenerator, type JsonGenerator } from "./gemini-client";
-import { MAX_BODY_BYTES, type ErrorBody, type StreamEvent } from "./protocol";
+import { HTTP_STATUS, MAX_BODY_BYTES, type ErrorBody, type StreamEvent } from "./protocol";
 import type { RateLimiter } from "./rate-limit";
 
 export interface Deps {
@@ -14,29 +14,19 @@ export interface Deps {
   state: { inFlight: number };
 }
 
-const STATUS: Partial<Record<ErrorCode, number>> = {
-  "missing-api-key": 503,
-  "payload-too-large": 413,
-  "bad-request": 400,
-  "too-many-requests": 429,
-  "rate-limited": 429,
-  "empty-document": 422,
-  "invalid-type": 415,
-};
-
-function errorResponse(code: ErrorCode, message: string, headers: Record<string, string> = {}): Response {
+export function errorResponse(code: ErrorCode, message: string, headers: Record<string, string> = {}): Response {
   const body: ErrorBody = { error: { code, message } };
-  return Response.json(body, { status: STATUS[code] ?? 500, headers: { "Cache-Control": "no-store", ...headers } });
+  return Response.json(body, { status: HTTP_STATUS[code] ?? 500, headers: { "Cache-Control": "no-store", ...headers } });
 }
 
-function clientKey(req: Request): string {
+export function clientKey(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   return forwarded || req.headers.get("x-real-ip") || "unknown";
 }
 
 /** Convert anything thrown into a safe stream event. Details are never sent to the browser. */
 export function toErrorEvent(error: unknown): StreamEvent {
-  if (error instanceof AppError) return { type: "error", code: error.code, message: error.message };
+  if (error instanceof AppError) return { type: "error", code: error.code, message: error.message, retryable: error.retryable, retryAfterMs: error.retryAfterMs };
   return { type: "error", code: "ai-unavailable", message: "Something went wrong while analyzing the document. Please try again." };
 }
 

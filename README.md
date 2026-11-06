@@ -52,9 +52,7 @@ DOCX (browser)
   server: app/api/analyze/route.ts → lib/ai/route-handler.ts
           validates the request, limits abuse, reads GEMINI_API_KEY
   → lib/document/sections.ts      sections with stable ids (section-001 …)
-  → lib/document/chunker.ts       sections packed into chunks (long documents only)
-  → lib/ai/document-analyzer.ts   per-chunk analysis → digests         (long documents)
-  → lib/ai/slide-planner.ts       ONE structured slide-plan request
+  → lib/ai/slide-planner.ts       ONE structured slide-plan request (short documents)
   → lib/ai/plan-validation.ts     JSON → Zod → grounding checks → one repair attempt
   → lib/ai/gemini-client.ts       @google/genai, retries, timeouts, error mapping
   ──────────────────────────────────────────────────────────────────────────────────────────
@@ -70,7 +68,7 @@ DOCX (browser)
 
 **Why the DOCX is parsed in the browser.** Parsing there keeps the existing, tested parser and keeps images local. Only extracted text and structure are sent, which also keeps requests far below Vercel's 4.5 MB request limit.
 
-**Short vs. long documents.** Up to `AI_SINGLE_CALL_CHARS` (45,000 characters by default) the whole document goes into a single request that both analyzes and plans. Longer documents are cut into chunks along their sections, never mid-sentence, each chunk is analyzed on its own and the digests are consolidated into one plan so repeated information is merged. Chunks run sequentially by default (`AI_CONCURRENCY=1`) to respect free-tier rate limits.
+**Short vs. long documents.** Up to `AI_SINGLE_CALL_CHARS` (45,000 characters, about 15 pages) the whole document goes into **one** request that both analyzes and plans. Longer documents use the [large-document pipeline](#large-documents) below.
 
 **Structured output.** Gemini is called with `responseMimeType: "application/json"` and a JSON schema. The answer is then parsed with Zod, which does not trust the model: invalid JSON or an invalid structure triggers exactly one repair request that lists the problems; if the result is still invalid the user sees an error and no deck is made. Unknown layout names, unknown section ids and duplicate slide ids are corrected or removed locally and reported.
 
@@ -98,6 +96,53 @@ src/
 ```
 
 ---
+
+## Large documents
+
+A single serverless request cannot reliably outlast a long series of rate-limited Gemini calls, so long documents are **coordinated by the browser** as a series of short, stateless requests. There is no database: the browser keeps the intermediate results in memory while the page is open.
+
+```
+A  Extract + segment   browser   sections (cut at headings, then paragraphs), then chunks of ~24,000 characters
+                                 with a short read-only overlap; tables stay whole and traceable by block id
+B/C Analyze chunks     POST /api/analyze/chunk        one request per chunk, 2 in parallel (configurable)
+                                 → compact structured analysis: arguments, definitions, facts, numbers,
+                                   examples, table references, source section ids
+D  Consolidate         POST /api/analyze/consolidate  only if the outline is above AI_PLAN_INPUT_CHARS;
+                                 batches of analyses are compressed (never the original text), repeated
+E  Plan slides         POST /api/analyze/plan         the same plan schema; one request per ~50 slides
+                                 (long decks are planned in consecutive parts and joined)
+F  Validate + render   browser   Zod validation, grounding checks, layout validation, PptxGenJS
+```
+
+- **Progress is real.** The list shows each stage while it runs, with real counts ("Analyzing chunks · 7 of 13 chunks", "Consolidating summaries · pass 1: 2 of 3 batches", "Planning slides · 2 of 3 parts"). Stages that were not needed are marked "(not needed)".
+- **Failure recovery.** Every chunk is requested, retried and stored on its own. A temporary 429/503 is retried by the browser with exponential backoff, jitter and the service's `Retry-After`/`retryDelay`; after a 429/503 the whole job drops to one request at a time. Invalid keys, daily quota exhaustion, blocked content and rejected requests are never retried. If a chunk still fails, the finished chunks are kept and pressing **Generate** again continues from where it stopped, with no repeated requests. Changing only the theme does not call the AI at all.
+- **Server stays stateless.** The step endpoints do not retry Gemini themselves, so no serverless request sits in a long retry loop; each is far below the 300-second function limit and the 4.5 MB body limit.
+- **Never silently changes model.** `GEMINI_MODEL` is the only model used.
+
+### Limits (all configurable, none unlimited)
+
+| Setting | Default | Why |
+| --- | --- | --- |
+| `AI_MAX_DOC_CHARS` | 1,000,000 | About 330 pages at ~3,000 characters per page. Beyond this the request count, the free-tier daily quota and the browser's memory make a single run unrealistic. The app says so and asks you to split the document. |
+| `AI_MAX_CHUNKS` | 80 | Upper bound of Gemini requests for stage B. |
+| `AI_CHUNK_CHARS` / `AI_CHUNK_OVERLAP_CHARS` | 24,000 / 400 | About 6,000 input tokens per chunk, well below the model's context; answers stay far below the output limit. |
+| `AI_PLAN_INPUT_CHARS` | 60,000 | Largest outline sent to one planning request. |
+| `AI_CONCURRENCY` | 2 | Parallel chunk requests per job. |
+
+**Expected Gemini requests** for a document of N chunks: `N` (analysis) + `C` (consolidation, usually 0 to a few) + `P` (plan parts, about one per 50 slides, at least 1) + retries. A 100-page document is about 13 chunks, so roughly 15 to 20 requests. A 330-page document is about 42 chunks, so roughly 50 to 60 requests. The free tier counts these against per-minute and per-day request limits that Google can change.
+
+### Measured results (real Gemini, synthetic lectures)
+
+Run on 2026-11-06 with `gemini-3.5-flash-lite` (the default `gemini-3.8-flash` was returning 503 "high demand" that day), the free tier, through a real local server and the browser job runner. The documents are **synthetic** (generated text with many numbers and tables); they test the pipeline, not summarization quality on real lectures. Pages are estimated at ~3,000 characters.
+
+| Document | Chunks | Requests | Time | Result |
+| --- | --- | --- | --- | --- |
+| 292,380 characters (≈ 97 pages), 30 chapters | 13 | 18 (incl. 1 retry after a 429) | 104 s | 116 slides, valid PPTX, 7 tables copied exactly, 116 speaker notes, 0 numbers outside the source |
+| 586,352 characters (≈ 195 pages), 60 chapters | 26 | 38 (incl. 1 retry; 4 consolidation, 7 plan parts) | 270 s | 187 slides, valid PPTX, 187 notes; 3 slides flagged for numbers not found in the source |
+
+The previous single-request architecture failed on the first document after 261 s (13 sequential chunk requests took 197 s; the combined analyses were as large as the document; the plan request asked for ~200 slides and was cut off).
+
+Vercel notes: every request is far below the 300 s function limit (slowest: a consolidation request, ~22 s) and the 4.5 MB body limit. The browser tab must stay open for the minutes a large document takes.
 
 ## 3. Local setup
 
@@ -150,17 +195,19 @@ The key is read only on the server. Never rename it with a `NEXT_PUBLIC_` prefix
 | --- | --- | --- |
 | `GEMINI_API_KEY` | – | Required. Server-side only. `GOOGLE_API_KEY` is accepted as a fallback name. |
 | `GEMINI_MODEL` | `gemini-3.8-flash` | Model id. |
-| `AI_MAX_DOC_CHARS` | 300000 | Longest document text accepted. |
 | `AI_SINGLE_CALL_CHARS` | 45000 | Up to this size the document is planned in one request. |
-| `AI_CHUNK_CHARS` | 24000 | Chunk size for longer documents. |
+| `AI_CHUNK_CHARS` / `AI_CHUNK_OVERLAP_CHARS` | 24000 / 400 | Chunk size and read-only overlap for longer documents. |
+| `AI_MAX_DOC_CHARS` / `AI_MAX_CHUNKS` | 1000000 / 80 | Largest document accepted (see [Large documents](#large-documents)). |
+| `AI_PLAN_INPUT_CHARS` | 60000 | Largest outline sent to one planning request. |
 | `AI_MAX_OUTPUT_TOKENS` | 32768 | Max tokens in one answer, including thinking. Must not exceed the model's output limit (65,536 for `gemini-3.8-flash` per Google's model page). |
 | `DIAGNOSTICS_TOKEN` | – | Enables `/api/diagnostics` in production. |
-| `AI_CONCURRENCY` | 1 | Simultaneous Gemini requests (1–4). Keep 1 on the free tier. |
-| `AI_MAX_RETRIES` | 3 | Retries for temporary errors (rate limit, 5xx, network), with exponential backoff and jitter. |
+| `AI_CONCURRENCY` | 2 | Parallel chunk requests per browser job (1–6). Drops to 1 automatically after a 429/503. |
+| `AI_MAX_RETRIES` | 3 | Retries per request for temporary errors, done by the browser with exponential backoff, jitter and Retry-After. |
 | `AI_REQUEST_TIMEOUT_MS` | 90000 | Timeout of one Gemini request. |
-| `AI_TOTAL_TIMEOUT_MS` | 270000 | Deadline for one whole analysis. |
-| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_MS` | 8 / 600000 | Best-effort per-IP limit. |
-| `MAX_IN_FLIGHT` | 3 | Best-effort cap of simultaneous analyses per server instance. |
+| `AI_TOTAL_TIMEOUT_MS` | 270000 | Deadline for one server request (short documents, or one step). |
+| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_MS` | 8 / 600000 | Best-effort per-IP limit for whole-document requests. |
+| `RATE_LIMIT_STEP_MAX` | 200 | Best-effort per-IP limit for chunk / consolidate / plan requests in the same window. |
+| `MAX_IN_FLIGHT` | 6 | Best-effort cap of simultaneous analyses per server instance. |
 
 ## 4. Tests and checks
 
@@ -219,7 +266,7 @@ The previous rule-based planner (`src/lib/slides/planner.ts`) is unchanged. It i
 - **The model sees text only.** Images are placed from the source and described by their alt text, if any. EMF/WMF images, SmartArt, text boxes, footnotes, comments and equations are skipped or reduced to text, as before.
 - **Layout validation uses text-size estimates**, not a rendering engine. It catches overflow, off-slide shapes, overlapping text, empty slides and dense slides, and splits slides rather than shrinking text below 11 pt, but it cannot guarantee pixel-exact results in every PowerPoint version or with missing fonts. A rendering-based check (for example LibreOffice) is not included.
 - **The chart preview is an approximation** of the native PowerPoint chart in the exported file.
-- **Very long documents** (above `AI_MAX_DOC_CHARS`) are rejected rather than truncated.
+- **Very long documents** (above `AI_MAX_DOC_CHARS` or `AI_MAX_CHUNKS`) are rejected rather than truncated. The browser tab must stay open while a large document is processed; closing it loses the in-memory intermediate results.
 - **Formatting is not reproduced.** Fonts, colors and inline formatting are replaced by the chosen theme.
 - **Legacy `.doc` files are not supported.** Save them as `.docx`.
 - **Live Gemini behavior is only as verified as you verify it.** The automated tests use a fake Gemini. Run `npm run check:gemini -- --full` with your own key to confirm that the model, structured output and the app's schemas work for your account.

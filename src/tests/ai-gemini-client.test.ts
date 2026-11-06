@@ -118,7 +118,7 @@ describe("readConfig", () => {
     const c = readConfig({ GEMINI_API_KEY: " k ", GEMINI_MODEL: "m", AI_CONCURRENCY: "99", AI_CHUNK_CHARS: "abc" });
     expect(c.apiKey).toBe("k");
     expect(c.model).toBe("m");
-    expect(c.concurrency).toBe(4);
+    expect(c.concurrency).toBe(6);
     expect(c.chunkChars).toBe(24_000);
     expect(readConfig({}).apiKey).toBeUndefined();
     // GOOGLE_API_KEY is accepted as a fallback; GEMINI_API_KEY wins when both are set.

@@ -30,37 +30,6 @@ describe("analyzeDocument", () => {
     expect(cited.has("section-002") && cited.has("section-003")).toBe(true);
   });
 
-  it("analyzes a long document chunk by chunk, then plans once from the digests", async () => {
-    const gemini = fakeGemini();
-    const stages: AnalyzeStage[] = [];
-    const small = { ...config, singleCallChars: 5_000, chunkChars: 12_000 };
-    const result = await analyzeDocument(request(longLecture(30)), small, gemini, (s) => stages.push(s));
-    expect(result.meta.mode).toBe("chunked");
-    expect(result.meta.chunks).toBeGreaterThan(2);
-    expect(gemini.calls).toHaveLength(result.meta.chunks + 1);
-    expect(stages).toEqual(["analyzing", "summarizing", "planning"]);
-    // The planning request received digests, not the raw document.
-    expect(gemini.calls.at(-1)!.prompt).toContain("faithful digest");
-    expect(result.plan.slides.length).toBeGreaterThan(30);
-  });
-
-  it("never exceeds the configured concurrency", async () => {
-    let active = 0;
-    let peak = 0;
-    const gemini = fakeGemini({
-      override: async () => {
-        active++;
-        peak = Math.max(peak, active);
-        await new Promise((res) => setTimeout(res, 5));
-        active--;
-        return undefined;
-      },
-    });
-    await analyzeDocument(request(longLecture(30)), { ...config, singleCallChars: 5_000, chunkChars: 8_000, concurrency: 2 }, gemini);
-    expect(peak).toBeLessThanOrEqual(2);
-    expect(peak).toBe(2);
-  });
-
   it("repairs an invalid answer once and reports success", async () => {
     const gemini = fakeGemini({ override: (_r, n) => (n === 1 ? "not json at all" : undefined) });
     const result = await analyzeDocument(request(shortLecture()), config, gemini);
@@ -75,17 +44,15 @@ describe("analyzeDocument", () => {
     expect(gemini.calls).toHaveLength(2); // original + one repair, never an endless loop
   });
 
-  it("repairs digests for a chunk, and fails cleanly if still invalid", async () => {
-    const small = { ...config, singleCallChars: 5_000, chunkChars: 12_000 };
-    const first = fakeGemini({ override: (_r, n) => (n === 1 ? '{"sections":[]}' : undefined) });
-    await expect(analyzeDocument(request(longLecture(20)), small, first)).resolves.toBeDefined();
-    const bad = fakeGemini({ override: (r) => (r.prompt.includes("Analyze part") ? "{}" : undefined) });
-    await expect(analyzeDocument(request(longLecture(20)), small, bad)).rejects.toMatchObject({ code: "invalid-ai-response" });
-  });
-
   it("rejects documents above the size limit before calling the AI", async () => {
     const gemini = fakeGemini();
     await expect(analyzeDocument(request(longLecture(30)), { ...config, maxDocChars: 5_000 }, gemini)).rejects.toMatchObject({ code: "payload-too-large" });
+    expect(gemini.calls).toHaveLength(0);
+  });
+
+  it("refuses to process a document that needs chunking in a single request", async () => {
+    const gemini = fakeGemini();
+    await expect(analyzeDocument(request(longLecture(30)), { ...config, singleCallChars: 5_000 }, gemini)).rejects.toMatchObject({ code: "payload-too-large" });
     expect(gemini.calls).toHaveLength(0);
   });
 

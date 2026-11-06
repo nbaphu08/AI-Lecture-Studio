@@ -25,9 +25,9 @@ export interface AnalyzeOptions {
 
 const CLIENT_TIMEOUT_MS = 295_000;
 
-function fromBody(body: unknown, fallback: ErrorCode): AppError {
+export function fromBody(body: unknown, fallback: ErrorCode): AppError {
   const e = (body as Partial<ErrorBody> | null)?.error;
-  if (e && typeof e.message === "string" && typeof e.code === "string") return new AppError(e.code as ErrorCode, e.message);
+  if (e && typeof e.message === "string" && typeof e.code === "string") return new AppError(e.code as ErrorCode, e.message, { retryable: e.retryable, retryAfterMs: e.retryAfterMs });
   return aiError(fallback);
 }
 
@@ -79,7 +79,7 @@ export async function requestAiPlan(doc: ParsedDocument, options: AnalyzeOptions
       throw aiError("invalid-ai-response");
     }
     if (event.type === "stage") onStage(event.stage);
-    else if (event.type === "error") throw new AppError(event.code, event.message);
+    else if (event.type === "error") throw new AppError(event.code, event.message, { retryable: event.retryable, retryAfterMs: event.retryAfterMs });
     else if (event.type === "result") {
       // Defense in depth: the browser re-validates what the server already validated.
       const parsed = planSchema.safeParse(event.plan);

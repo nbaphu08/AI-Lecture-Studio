@@ -164,8 +164,10 @@ export const DIGEST_JSON_SCHEMA = obj(
           topic: S,
           summary: S,
           learningObjectives: arr(S),
-          points: arr(
-            obj(
+          points: {
+            type: "array",
+            maxItems: 12,
+            items: obj(
               {
                 kind: { type: "string", enum: ["concept", "definition", "example", "data", "process", "comparison", "timeline", "conclusion", "other"] },
                 term: S,
@@ -175,7 +177,7 @@ export const DIGEST_JSON_SCHEMA = obj(
               },
               ["kind", "text", "importance"],
             ),
-          ),
+          },
         },
         ["sectionId", "summary", "points"],
       ),

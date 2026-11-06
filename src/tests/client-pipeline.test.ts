@@ -2,13 +2,12 @@
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readConfig } from "@/lib/ai/config";
-import { createRateLimiter } from "@/lib/ai/rate-limit";
-import { handleAnalyze } from "@/lib/ai/route-handler";
 import { requestAiPlan } from "@/lib/analyze-client";
 import { buildPresentation, STAGES, type Stage } from "@/lib/pipeline";
 import { DEFAULT_SETTINGS } from "@/lib/settings";
 import { aiError, isAiServiceFailure } from "@/lib/utils/errors";
 import { fakeGemini } from "./fake-gemini";
+import { makeServer } from "./harness";
 import { longLecture, shortLecture } from "./fixtures";
 
 const { window } = new JSDOM("");
@@ -16,20 +15,12 @@ Object.assign(globalThis, { DOMParser: window.DOMParser, Node: window.Node });
 
 const config = { ...readConfig({ GEMINI_API_KEY: "k" }), maxRetries: 0 };
 
-/** Route the browser's fetch straight into the server handler, without a network. */
+/** Route the browser's fetch straight into the server handlers, without a network. */
 function serve(generator = fakeGemini(), over: Partial<typeof config> = {}) {
-  const calls: string[] = [];
-  const fetchImpl = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
-    calls.push(String(url));
-    return handleAnalyze(new Request(`http://localhost${url}`, init), {
-      config: { ...config, ...over },
-      limiter: createRateLimiter(100, 60_000),
-      state: { inFlight: 0 },
-      makeGenerator: () => generator,
-    });
-  });
+  const server = makeServer(generator, { ...config, ...over });
+  const fetchImpl = vi.fn(server.fetchImpl);
   vi.stubGlobal("fetch", fetchImpl);
-  return { fetchImpl, generator, calls };
+  return { fetchImpl, generator, server };
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -39,7 +30,7 @@ describe("browser ↔ /api/analyze", () => {
     const { generator } = serve();
     const stages: Stage[] = [];
     const result = await buildPresentation(shortLecture(), "lecture.docx", DEFAULT_SETTINGS, (s) => stages.push(s));
-    expect(stages).toEqual(["analyzing", "planning", "generating", "validating"]);
+    expect(stages).toEqual(["segmenting", "analyzing", "planning", "generating", "validating"]);
     expect(generator.calls).toHaveLength(1);
     expect(result.planner).toBe("ai");
     expect(result.plan.slides[0].kind).toBe("cover");
@@ -47,19 +38,24 @@ describe("browser ↔ /api/analyze", () => {
     expect(result.downloadName).toMatch(/\.pptx$/);
   });
 
-  it("reports summarizing only for documents that needed it", async () => {
+  it("reports every stage, with real chunk counts, for a document that needs chunking", async () => {
     serve(fakeGemini(), { singleCallChars: 5_000, chunkChars: 12_000 });
-    const stages: Stage[] = [];
-    await buildPresentation(longLecture(20), "long.docx", DEFAULT_SETTINGS, (s) => stages.push(s));
-    expect(stages).toEqual(["analyzing", "summarizing", "planning", "generating", "validating"]);
-    expect(STAGES.map((s) => s.id)).toEqual(["reading", "analyzing", "summarizing", "planning", "generating", "validating"]);
+    const events: string[] = [];
+    await buildPresentation(longLecture(20), "long.docx", DEFAULT_SETTINGS, (s, d) => events.push(d ? `${s}:${d}` : s));
+    expect(events[0]).toBe("segmenting");
+    expect(events.filter((e) => e.startsWith("analyzing:")).at(0)).toMatch(/^analyzing:0 of \d+ chunks$/);
+    const last = events.filter((e) => e.startsWith("analyzing:")).at(-1)!;
+    const [, done, total] = /(\d+) of (\d+) chunks/.exec(last)!;
+    expect(done).toBe(total);
+    expect(events.slice(-3)).toEqual(["planning", "generating", "validating"]);
+    expect(STAGES.map((s) => s.id)).toEqual(["reading", "segmenting", "analyzing", "consolidating", "planning", "generating", "validating"]);
   });
 
-  it("marks the summarizing stage as not needed for short documents", async () => {
+  it("marks consolidating as not needed when the outline already fits", async () => {
     serve();
     const skipped: Stage[][] = [];
     await buildPresentation(shortLecture(), "a.docx", DEFAULT_SETTINGS, () => {}, { onSkipped: (s) => skipped.push(s) });
-    expect(skipped).toEqual([["summarizing"]]);
+    expect(skipped).toEqual([["consolidating"]]);
   });
 
   it("reuses a received AI plan instead of asking the AI again", async () => {
@@ -79,7 +75,7 @@ describe("browser ↔ /api/analyze", () => {
     const doc = shortLecture();
     doc.blocks.push({ id: "bX", type: "image", src: "data:image/png;base64,SECRETIMAGEBYTES", alt: "pic" });
     await buildPresentation(doc, "a.docx", DEFAULT_SETTINGS, () => {});
-    const init = fetchImpl.mock.calls[0][1]!;
+    const init = fetchImpl.mock.calls.find((c) => String(c[0]).endsWith("/api/analyze"))![1]!;
     expect(String(init.body)).not.toContain("SECRETIMAGEBYTES");
     expect(String(init.body)).toContain('"alt":"pic"');
     expect(JSON.stringify(init.headers)).not.toMatch(/key|authorization/i);
@@ -94,12 +90,11 @@ describe("browser ↔ /api/analyze", () => {
   });
 
   it("surfaces a missing API key without exposing configuration", async () => {
-    const fetchImpl = vi.fn(async (url: string | URL | Request, init?: RequestInit) =>
-      handleAnalyze(new Request(`http://localhost${url}`, init), { config: { ...config, apiKey: undefined }, limiter: createRateLimiter(9, 1000), state: { inFlight: 0 } }),
-    );
-    vi.stubGlobal("fetch", fetchImpl);
+    const server = makeServer(null, { ...config, apiKey: undefined });
+    vi.stubGlobal("fetch", vi.fn(server.fetchImpl));
     const err = await buildPresentation(shortLecture(), "a.docx", DEFAULT_SETTINGS, () => {}).catch((e) => e);
     expect(err.code).toBe("missing-api-key");
+    expect(err.message).not.toMatch(/GEMINI_API_KEY|AIza/);
   });
 
   it("maps network failures and timeouts to friendly errors", async () => {

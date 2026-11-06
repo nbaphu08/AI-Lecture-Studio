@@ -79,6 +79,8 @@ export function validateDeck(deck: ComposedDeck): LayoutIssue[] {
       if (s.t === "text") {
         const real = s.paras.some((p) => p.text.trim());
         if (!real) continue;
+        // Decorative glyphs (the big opening quote mark) are drawn larger than their box on purpose.
+        if (s.paras.length === 1 && s.paras[0].text.trim().length <= 2) continue;
         texts.push(s);
         chars += s.paras.reduce((n, p) => n + p.text.length, 0);
         const needed = neededTextHeight(s);

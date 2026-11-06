@@ -25,10 +25,14 @@ const DENSITY_RULES: Record<Density, string> = {
 };
 
 /** Rough slide-count guidance. It is a hint, not a quota. */
+/** One plan request must stay far below the model's output limit (≈350 tokens per slide). */
+export const SLIDES_PER_PLAN_REQUEST = 50;
+
 export function slideRange(chars: number, density: Density): { min: number; max: number } {
-  const perSlide = { concise: 2_200, balanced: 1_400, detailed: 900 }[density];
+  // About 3,000 characters fill a page; a slide covers roughly a third to a page of source text.
+  const perSlide = { concise: 3_500, balanced: 2_200, detailed: 1_400 }[density];
   const mid = Math.max(5, Math.round(chars / perSlide));
-  return { min: Math.max(4, Math.round(mid * 0.7)), max: Math.min(200, Math.max(8, Math.round(mid * 1.3))) };
+  return { min: Math.max(4, Math.round(mid * 0.7)), max: Math.min(400, Math.max(8, Math.round(mid * 1.3))) };
 }
 
 const LAYOUT_GUIDE = `LAYOUTS (field to fill in brackets):
@@ -56,10 +60,17 @@ export interface PlanPromptInput {
   preferDiagrams: boolean;
   documentTitle?: string;
   fileName?: string;
+  /** Present when a long document is planned in several consecutive parts. */
+  part?: { index: number; total: number };
 }
 
 export function buildPlanPrompt(input: PlanPromptInput): string {
   const range = slideRange(input.chars, input.density);
+  const last = !input.part || input.part.index === input.part.total - 1;
+  const first = !input.part || input.part.index === 0;
+  const partNote = input.part
+    ? `\nTHIS IS PART ${input.part.index + 1} OF ${input.part.total} of a long presentation; the parts are joined afterwards. Plan only the slides for the sections in the SOURCE below. The parts are an internal detail: NEVER mention part numbers ("Part 1 of 4") in any title, subtitle, slide text or notes.${first ? " Slide 1 is the title slide." : " Do NOT add a title slide."}${last ? " End with a key-takeaways slide." : " Do NOT add a key-takeaways or closing slide; the next part continues the lecture."}\n`
+    : "";
   const kindNote =
     input.sourceKind === "document"
       ? "The SOURCE is the document text. Each block starts with its id in brackets, e.g. [b12]."
@@ -67,7 +78,7 @@ export function buildPlanPrompt(input: PlanPromptInput): string {
   return `Plan a lecture presentation from the SOURCE below.
 
 ${kindNote}
-
+${partNote}
 PRESENTATION SETTINGS
 - ${DENSITY_RULES[input.density]}
 - Aim for roughly ${range.min}-${range.max} slides in total. This is a guideline: use fewer or more if the content needs it. Do not create one slide per heading mechanically; merge small sections and split large ones.
@@ -78,7 +89,7 @@ ${LAYOUT_GUIDE}
 HOW TO PLAN
 1. Identify the topic, learning objectives (only if the SOURCE states or clearly implies them), main sections, key concepts, definitions, examples, numbers and conclusions.
 2. Separate essential knowledge from supporting explanations, repeated information and optional examples. Merge repeated information instead of repeating it on several slides.
-3. Slide 1 uses the "title" layout. Use "section-divider" slides only when the document has several major parts. Finish with a "key-takeaways" slide.
+3. ${first ? 'Slide 1 uses the "title" layout. ' : ""}Use "section-divider" slides only when the document has several major parts. ${last ? 'Finish with a "key-takeaways" slide.' : ""}
 4. Every slide needs a specific, meaningful title and the fields required by its layout. Give each slide a unique id such as "slide-001".
 5. "sourceSections" lists the section ids (from this list: ${input.sectionIds.join(", ")}) that support the slide. Use only ids from that list. Every section of the SOURCE should be reflected in at least one slide.
 6. "keyMessage" is a one-sentence takeaway of the slide in the SOURCE's own terms. "speakerNotes" may hold extra explanation from the SOURCE that does not fit on the slide.
@@ -99,12 +110,34 @@ For each section:
 - "summary": 1-3 sentences that preserve the meaning.
 - "learningObjectives": only if the SOURCE states them.
 - "points": the knowledge worth putting on slides, in the order of the SOURCE. Each point has a "kind" (concept, definition, example, data, process, comparison, timeline, conclusion, other), an "importance" (high = essential knowledge, medium = supporting explanation, low = optional detail or example), the "text" (faithful, self-contained, with exact numbers and terms), a "term" for definitions, and "sourceBlocks" (the [id]s the point comes from).
+- Be COMPACT. At most 8 points per section (fewer for short sections), each at most two sentences (about 250 characters), and the whole answer no longer than about 30% of the SOURCE. Prefer the essential knowledge, key numbers and definitions over every detail.
 - Do not repeat the same information in several points. Keep technical terminology.
 - Tables and images are handled separately; mention what a table shows in a point, but do not retype its cells.
 - If a section is a continuation, continue its points; do not restart.
+- A "CONTEXT" block, if present, is only the end of the previous part so you can follow the thread. Never create points from it.
 
 <SOURCE>
 ${chunkText}
+</SOURCE>`;
+}
+
+/**
+ * Consolidation: compress a batch of section analyses so the final planning request stays small. The
+ * model only sees these compact analyses, never the original document again.
+ */
+export function buildConsolidatePrompt(digestsText: string, targetChars: number): string {
+  return `Below are analyses of consecutive sections of one lecture document. Consolidate them into a SHORTER set of analyses.
+
+Rules:
+- Return one entry in "sections" for EVERY sectionId below, with the same "sectionId", in the same order.
+- Keep each point under the section it came from, but remove information that is repeated (in the same section or in an earlier one) and merge near-duplicate points.
+- Keep ALL definitions, numbers, dates, units, names, and references to tables or images exactly as written. Never round, recompute or invent anything.
+- Drop "low" importance points first, then shorten "medium" ones. Keep "high" importance points.
+- Keep "sourceBlocks" ids on the points you keep, and keep a one- or two-sentence "summary" for every section.
+- Aim for at most about ${targetChars} characters in total.
+
+<SOURCE>
+${digestsText}
 </SOURCE>`;
 }
 

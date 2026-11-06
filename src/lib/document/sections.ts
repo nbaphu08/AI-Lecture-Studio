@@ -39,7 +39,16 @@ export function blockToText(block: WireBlock): string {
   }
 }
 
-export function buildSections(blocks: WireBlock[]): Section[] {
+export interface SectionOptions {
+  /**
+   * Sections longer than this are cut at block (paragraph, list, table) boundaries into consecutive
+   * parts, so one huge chapter - or a document with no headings at all - still gets traceable ids.
+   * A single block longer than this stays whole here; the chunker splits it by sentence or row.
+   */
+  maxChars?: number;
+}
+
+export function buildSections(blocks: WireBlock[], options: SectionOptions = {}): Section[] {
   const levels = blocks.flatMap((b) => (b.type === "heading" ? [b.level] : []));
   const splitAt = levels.length ? Math.min(3, Math.min(...levels) + 1) : 0;
 
@@ -52,7 +61,34 @@ export function buildSections(blocks: WireBlock[]): Section[] {
     groups[groups.length - 1].blocks.push(block);
   }
 
-  return groups.map((g, i) => {
+  // Cut over-long groups into parts of about maxChars, only between blocks.
+  const parts: typeof groups = [];
+  for (const g of groups) {
+    const texts = g.blocks.map(blockToText);
+    const total = texts.reduce((n, t) => n + t.length + 1, 0);
+    if (!options.maxChars || total <= options.maxChars) {
+      parts.push(g);
+      continue;
+    }
+    let current: WireBlock[] = [];
+    let size = 0;
+    let n = 0;
+    const flush = () => {
+      if (!current.length) return;
+      parts.push({ heading: g.heading ? (n ? `${g.heading} (part ${n + 1})` : g.heading) : undefined, level: g.level, blocks: current });
+      n++;
+      current = [];
+      size = 0;
+    };
+    g.blocks.forEach((b, i) => {
+      if (size > 0 && size + texts[i].length > options.maxChars!) flush();
+      current.push(b);
+      size += texts[i].length + 1;
+    });
+    flush();
+  }
+
+  return parts.map((g, i) => {
     const text = g.blocks.map(blockToText).join("\n");
     return { id: `section-${pad(i + 1)}`, heading: g.heading, level: g.level, blockIds: g.blocks.map((b) => b.id), text, chars: text.length };
   });

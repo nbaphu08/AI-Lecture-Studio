@@ -20,7 +20,8 @@ export type ErrorCode =
   | "payload-too-large"
   | "bad-request"
   | "too-many-requests"
-  | "validation-failed";
+  | "validation-failed"
+  | "job-incomplete";
 
 /** Messages that are safe to show to users for each AI-related failure. */
 export const AI_ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
@@ -36,17 +37,24 @@ export const AI_ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
   "invalid-ai-response": "The AI returned a response that could not be turned into a reliable presentation. Please try again.",
   "payload-too-large": "This document is too long to analyze. Try a shorter document or split it into parts.",
   "bad-request": "The document could not be sent for analysis. Please reload the page and try again.",
+  "job-incomplete": "Part of the document could not be analyzed. The parts that finished are kept, so pressing Generate again continues where it stopped.",
   "too-many-requests": "You have made several requests in a short time. Please wait a few minutes and try again.",
 };
 
 /** An error whose message is safe to show to users as-is. */
 export class AppError extends Error {
   readonly code: ErrorCode;
+  /** True when trying the same request again later may succeed (temporary overload, rate limit…). */
+  retryable?: boolean;
+  /** Delay the service asked for before the next attempt, in milliseconds. */
+  retryAfterMs?: number;
 
-  constructor(code: ErrorCode, userMessage: string, options?: { cause?: unknown }) {
+  constructor(code: ErrorCode, userMessage: string, options?: { cause?: unknown; retryable?: boolean; retryAfterMs?: number }) {
     super(userMessage, options);
     this.name = "AppError";
     this.code = code;
+    this.retryable = options?.retryable;
+    this.retryAfterMs = options?.retryAfterMs;
   }
 }
 
@@ -70,6 +78,7 @@ export function isAiServiceFailure(error: unknown): boolean {
     "invalid-ai-response",
     "too-many-requests",
     "payload-too-large",
+    "job-incomplete",
   ].includes(error.code);
 }
 

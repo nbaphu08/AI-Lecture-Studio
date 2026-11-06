@@ -9,6 +9,7 @@ import { LiveBackground } from "@/components/live-background";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsPanel } from "@/components/results-panel";
 import { UploadDropzone } from "@/components/upload-dropzone";
+import { createJobStore, type JobStore } from "@/lib/analysis-job";
 import type { AiPlanResult } from "@/lib/analyze-client";
 import type { ParsedDocument } from "@/lib/docx/types";
 import { validateDocxFile } from "@/lib/docx/validation";
@@ -18,7 +19,7 @@ import { isAiServiceFailure, toUserMessage } from "@/lib/utils/errors";
 
 const SAMPLE_FILE = "sample-renewable-energy.docx";
 
-type Status = { kind: "idle" } | { kind: "working"; stage: Stage } | { kind: "error"; message: string; canUseBasic: boolean };
+type Status = { kind: "idle" } | { kind: "working"; stage: Stage; detail?: string } | { kind: "error"; message: string; canUseBasic: boolean };
 
 function Card({ step, title, description, children }: { step: number; title: string; description: string; children: React.ReactNode }) {
   return (
@@ -47,6 +48,8 @@ export default function Home() {
   const parsedRef = useRef<{ file: File; doc: ParsedDocument } | null>(null);
   // AI plan cache: the same document with the same planning inputs is not sent to the AI service twice.
   const aiPlanRef = useRef<{ file: File; key: string; result: AiPlanResult } | null>(null);
+  // Finished chunk analyses of a large document: a retry after a failure resumes instead of starting over.
+  const jobStoreRef = useRef<{ file: File; store: JobStore } | null>(null);
   const [skipped, setSkipped] = useState<Stage[]>([]);
   const workingRef = useRef(false);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -57,6 +60,7 @@ export default function Home() {
   const reset = useCallback(() => {
     parsedRef.current = null;
     aiPlanRef.current = null;
+    jobStoreRef.current = null;
     setResult(null);
     setResultKey(null);
     setStatus({ kind: "idle" });
@@ -102,7 +106,7 @@ export default function Home() {
       if (!file || workingRef.current) return; // prevents duplicate processing on double clicks
       workingRef.current = true;
       setSkipped([]);
-      const onStage = (stage: Stage) => setStatus({ kind: "working", stage });
+      const onStage = (stage: Stage, detail?: string) => setStatus({ kind: "working", stage, detail });
       try {
         let doc = parsedRef.current?.file === file ? parsedRef.current.doc : null;
         if (!doc) {
@@ -114,6 +118,7 @@ export default function Home() {
         const cached = aiPlanRef.current?.file === file && aiPlanRef.current.key === planKey ? aiPlanRef.current.result : undefined;
         const next = await buildPresentation(doc, file.name, settings, onStage, {
           planner,
+          store: (jobStoreRef.current?.file === file ? jobStoreRef.current : (jobStoreRef.current = { file, store: createJobStore() })).store,
           cachedAiPlan: cached,
           onAiPlan: (result) => (aiPlanRef.current = { file, key: planKey, result }),
           onSkipped: setSkipped,
@@ -190,7 +195,7 @@ export default function Home() {
               )}
               {working && (
                 <div className="mt-4">
-                  <GenerationProgress stage={status.stage} skipped={skipped} />
+                  <GenerationProgress stage={status.stage} detail={status.detail} skipped={skipped} />
                 </div>
               )}
               {status.kind === "error" && (

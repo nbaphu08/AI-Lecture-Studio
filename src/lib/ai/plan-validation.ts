@@ -13,6 +13,8 @@ export interface ValidationContext {
   imageIds: Set<string>;
   /** Plain text of the whole original document, used to check numbers. */
   sourceText: string;
+  /** Normalized numbers of the original document; used instead of `sourceText` when the text is not available. */
+  numbers?: Set<string>;
 }
 
 export interface ValidationResult {
@@ -106,7 +108,7 @@ export function validatePlan(raw: string, ctx: ValidationContext): ValidationRes
   const plan: AiPlan = result.data;
   const warnings: string[] = [];
   const problems: string[] = [];
-  const source = ctx.sourceText ? numberSet(ctx.sourceText) : null;
+  const source = ctx.numbers ?? (ctx.sourceText ? numberSet(ctx.sourceText) : null);
 
   // Unique ids: renumbering is harmless, so repair silently.
   const seen = new Set<string>();

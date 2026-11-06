@@ -14,6 +14,11 @@ export interface Chunk {
   id: string;
   parts: ChunkPart[];
   chars: number;
+  /**
+   * The end of the previous chunk (cut at a line start), for continuity only. The model is told not to
+   * extract points from it. Absent for the first chunk.
+   */
+  context?: string;
 }
 
 /** Split one over-long block: tables and lists by line (repeating the header), prose by sentence. */
@@ -57,7 +62,7 @@ function splitSection(section: Section, max: number): string[] {
  * Group sections into chunks of about `maxChars`, keeping the original order. Sections are never
  * split unless one alone exceeds the limit; then it is cut at block (or sentence) boundaries.
  */
-export function chunkSections(sections: Section[], maxChars: number): Chunk[] {
+export function chunkSections(sections: Section[], maxChars: number, overlapChars = 0): Chunk[] {
   const chunks: Chunk[] = [];
   let current: ChunkPart[] = [];
   let size = 0;
@@ -78,12 +83,28 @@ export function chunkSections(sections: Section[], maxChars: number): Chunk[] {
     });
   }
   flush();
+
+  if (overlapChars > 0) {
+    for (let i = 1; i < chunks.length; i++) {
+      const previous = chunks[i - 1].parts.at(-1)!.text;
+      if (previous.length <= overlapChars) {
+        chunks[i].context = previous;
+      } else {
+        const tail = previous.slice(-overlapChars);
+        const lineStart = tail.indexOf("\n");
+        chunks[i].context = lineStart >= 0 ? tail.slice(lineStart + 1) : tail;
+      }
+    }
+  }
   return chunks;
 }
 
 /** A chunk as one prompt string. */
 export function chunkToText(chunk: Chunk): string {
-  return chunk.parts
+  const context = chunk.context
+    ? `=== CONTEXT: end of the previous part, for continuity only (do not extract points from it) ===\n${chunk.context}\n\n`
+    : "";
+  return context + chunk.parts
     .map((p) => `=== ${p.sectionId}${p.heading ? ` — "${p.heading}"` : ""}${p.continued ? " (continued)" : ""} ===\n${p.text}`)
     .join("\n\n");
 }

@@ -2,10 +2,8 @@
 import { describe, expect, it } from "vitest";
 import JSZip from "jszip";
 import { JSDOM } from "jsdom";
-import { analyzeDocument } from "@/lib/ai/analyze-service";
-import { readConfig } from "@/lib/ai/config";
+import { analyzeDocumentJob, createJobStore } from "@/lib/analysis-job";
 import { planSchema } from "@/lib/ai/schemas";
-import { toWireDocument, analyzeRequestSchema } from "@/lib/document/wire";
 import type { ParsedDocument } from "@/lib/docx/types";
 import { resolveSettings } from "@/lib/design/style-hints";
 import { THEME_LIST, type ThemeId } from "@/lib/design/themes";
@@ -19,15 +17,15 @@ import { DEFAULT_SETTINGS } from "@/lib/settings";
 import { aiPlanToDeckPlan } from "@/lib/slides/ai-plan";
 import type { DeckPlan } from "@/lib/slides/types";
 import { fakeGemini } from "./fake-gemini";
+import { makeServer } from "./harness";
 import { h, longLecture, makeDoc, numericDoc, p, repeatedDoc, shortLecture, tableDoc, technicalDoc } from "./fixtures";
 
 const { window } = new JSDOM("");
-const config = { ...readConfig({ GEMINI_API_KEY: "k" }), maxRetries: 0 };
-
 async function run(doc: ParsedDocument, density: "concise" | "balanced" | "detailed" = "balanced") {
-  const req = analyzeRequestSchema.parse({ ...toWireDocument(doc), density });
-  const ai = await analyzeDocument(req, config, fakeGemini());
-  return aiPlanToDeckPlan(ai.plan, doc, { density }, ai.warnings);
+  // The same path the browser takes: limits → (chunks → consolidation) → plan, against the real handlers.
+  const server = makeServer(fakeGemini());
+  const job = await analyzeDocumentJob(doc, { density, preferDiagrams: false, store: createJobStore(), fetchImpl: server.fetchImpl as typeof fetch, onProgress: () => {}, sleep: async () => {} });
+  return aiPlanToDeckPlan(job.plan, doc, { density }, job.warnings);
 }
 
 async function pptxOf(plan: DeckPlan, themeId: ThemeId = "academic", aspect: AspectRatio = "16:9") {
@@ -162,6 +160,22 @@ describe("layout validation", () => {
     expect(codes(2)).toContain("out-of-bounds");
     expect(codes(3)).toContain("overlap");
     expect(validateDeck({ ...deck, w: 0 }).some((x) => x.code === "invalid-size")).toBe(true);
+  });
+
+  it("does not flag decorative quote marks as overflowing text", () => {
+    const plan: DeckPlan = {
+      title: "T",
+      slides: [
+        { id: "s1", kind: "cover", title: "T", sourceIds: [] },
+        { id: "s2", kind: "definition", title: "Osmosis", term: "Osmosis", definition: "Movement of water across a membrane.", sourceIds: [] },
+      ],
+      coverage: { totalBlocks: 0, assigned: [], metadata: [], unsupported: [], recovered: [] },
+      warnings: [],
+    };
+    for (const theme of THEME_LIST) {
+      const fitted = composeValidated(plan, resolveSettings({ ...DEFAULT_SETTINGS, themeId: theme.id }));
+      expect(fitted.issues.filter((i) => i.code === "overflow"), theme.id).toEqual([]);
+    }
   });
 
   it("splits overloaded slides instead of shrinking text below a readable size", () => {
