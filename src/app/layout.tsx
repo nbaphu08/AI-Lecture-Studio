@@ -6,7 +6,7 @@ const ui = Geist({ subsets: ["latin", "vietnamese"], variable: "--font-ui" });
 const display = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["normal", "italic"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: "SlideCraft — Turn documents into beautiful presentations",
+  title: "AI Lecture Studio — Turn documents into beautiful presentations",
   description: "Upload a Word document and get a professionally designed, editable PowerPoint presentation. Everything runs in your browser.",
 };
 

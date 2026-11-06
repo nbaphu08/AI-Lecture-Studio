@@ -198,7 +198,7 @@ export default function Home() {
         )}
       </main>
       <footer className="glass-bar border-t py-6 text-center text-xs text-fg-muted">
-        SlideCraft · Rule-based presentation generator · Runs entirely in your browser
+        AI Lecture Studio · Rule-based presentation generator · Runs entirely in your browser
       </footer>
     </>
   );
