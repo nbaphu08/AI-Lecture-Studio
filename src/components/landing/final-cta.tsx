@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check } from "lucide-react";
 import { useReveal } from "./use-scroll";
 
-const CHECKS = ["No sign-up needed", "Runs entirely in your browser", "Editable .pptx you own"];
+const CHECKS = ["No sign-up needed", "Slides planned by Gemini AI", "Editable .pptx you own"];
 
 export function FinalCta() {
   const ref = useReveal<HTMLElement>();
@@ -47,8 +47,8 @@ export function FinalCta() {
             Your next lecture deserves <span className="lp-serif lp-accent">better slides.</span>
           </h2>
           <p className="lp-body lp-body-center" data-r style={{ "--d": 2 } as React.CSSProperties}>
-            Upload a Word document, choose a template and download an editable PowerPoint. No sign-up, nothing to install, and your files
-            never leave your device.
+            Upload a Word document, choose a template and download an editable PowerPoint. No sign-up, nothing to install, and your Word file
+            stays on your device. Only its text is sent to the AI that plans the slides.
           </p>
           <div data-r style={{ "--d": 3 } as React.CSSProperties}>
             <Link ref={buttonRef} href="/studio" onNavigate={onNavigate} className="lp-start">

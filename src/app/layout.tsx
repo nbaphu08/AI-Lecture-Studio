@@ -7,7 +7,7 @@ const display = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["n
 
 export const metadata: Metadata = {
   title: "AI Lecture Studio — Turn documents into beautiful presentations",
-  description: "Upload a Word document and get a professionally designed, editable PowerPoint presentation. Everything runs in your browser.",
+  description: "Upload a Word document and get a professionally designed, editable PowerPoint presentation. AI plans the slides; the PowerPoint is built in your browser.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -40,6 +40,120 @@ function cssGradient(g: Gradient): string {
   return `linear-gradient(${g.angle + 90}deg, #${g.from}, #${g.to})`;
 }
 
+/** Simple SVG stand-in for a native PowerPoint chart (the exported file contains the real chart). */
+function ChartPreview({ shape: c, left, top, wPct, hPct }: { shape: Extract<Shape, { t: "chart" }>; left: string; top: string; wPct: string; hPct: string }) {
+  const W = c.w;
+  const H = c.h;
+  const fs = c.size / 72;
+  const font = FONT_STACKS[c.font] ?? c.font;
+  const legend = c.chartType === "pie" || c.series.length > 1;
+  const legendH = legend ? fs * 2.2 : 0;
+  const left0 = fs * 3.2;
+  const bottom = fs * 2.2 + legendH;
+  const plot = { x: left0, y: fs * 0.8, w: W - left0 - fs, h: H - fs * 0.8 - bottom };
+  const col = (i: number) => `#${c.colors[i % c.colors.length]}`;
+  const wrap = (children: React.ReactNode) => (
+    <svg className="pointer-events-none absolute" style={{ left, top, width: wPct, height: hPct }} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={c.alt}>
+      <g fontFamily={font} fontSize={fs} fill={`#${c.textColor}`}>{children}</g>
+    </svg>
+  );
+  const legendItems = (items: string[]) => {
+    let x = 0;
+    const widths = items.map((t) => t.length * fs * 0.55 + fs * 2);
+    const total = widths.reduce((a, b) => a + b, 0);
+    x = (W - total) / 2;
+    return items.map((t, i) => {
+      const gx = x;
+      x += widths[i];
+      return (
+        <g key={i} transform={`translate(${Math.max(0, gx)}, ${H - fs * 1.1})`}>
+          <rect width={fs * 0.8} height={fs * 0.8} y={-fs * 0.7} fill={col(i)} />
+          <text x={fs * 1.1}>{t}</text>
+        </g>
+      );
+    });
+  };
+
+  if (c.chartType === "pie") {
+    const values = c.series[0].values.map((v) => Math.max(0, v));
+    const sum = values.reduce((a, b) => a + b, 0) || 1;
+    const r = Math.min(plot.w, plot.h + fs * 0.8) / 2;
+    const cx = W / 2;
+    const cy = fs * 0.8 + r;
+    const starts = values.map((_, i) => -Math.PI / 2 + (values.slice(0, i).reduce((a, b) => a + b, 0) / sum) * Math.PI * 2);
+    return wrap(
+      <>
+        {values.map((v, i) => {
+          const a0 = starts[i];
+          const a1 = a0 + (v / sum) * Math.PI * 2;
+          const large = a1 - a0 > Math.PI ? 1 : 0;
+          const d = `M${cx},${cy} L${cx + r * Math.cos(a0)},${cy + r * Math.sin(a0)} A${r},${r} 0 ${large} 1 ${cx + r * Math.cos(a1)},${cy + r * Math.sin(a1)} Z`;
+          const mid = (a0 + a1) / 2;
+          return (
+            <g key={i}>
+              <path d={d} fill={col(i)} stroke="#fff" strokeWidth={fs * 0.08} />
+              {v / sum > 0.05 && (
+                <text x={cx + r * 0.62 * Math.cos(mid)} y={cy + r * 0.62 * Math.sin(mid)} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontWeight={700}>
+                  {Math.round((v / sum) * 100)}%
+                </text>
+              )}
+            </g>
+          );
+        })}
+        {legendItems(c.categories)}
+      </>,
+    );
+  }
+
+  const all = c.series.flatMap((s) => s.values);
+  const rawMax = Math.max(0, ...all);
+  const rawMin = Math.min(0, ...all);
+  // "Nice" axis: round step (1, 2, 5 × 10^n) so ticks read 0, 50, 100 rather than 52.5.
+  const rough = (rawMax - rawMin || 1) / 4;
+  const pow = 10 ** Math.floor(Math.log10(rough));
+  const step = (([1, 2, 5, 10].find((m) => m * pow >= rough) ?? 10) * pow) || 1;
+  const min = Math.floor(rawMin / step) * step;
+  const max = Math.ceil(rawMax / step) * step;
+  const span = max - min || 1;
+  const y = (v: number) => plot.y + plot.h - ((v - min) / span) * plot.h;
+  const n = c.categories.length;
+  const band = plot.w / n;
+  const ticks = Math.max(1, Math.round(span / step));
+  return wrap(
+    <>
+      {Array.from({ length: ticks + 1 }, (_, t) => {
+        const v = min + step * t;
+        return (
+          <g key={t}>
+            <line x1={plot.x} x2={plot.x + plot.w} y1={y(v)} y2={y(v)} stroke={`#${c.gridColor}`} strokeWidth={0.01} />
+            <text x={plot.x - fs * 0.4} y={y(v)} textAnchor="end" dominantBaseline="middle">{Number.isInteger(v) ? v : Number(v.toFixed(2))}</text>
+          </g>
+        );
+      })}
+      {c.chartType === "bar"
+        ? c.series.map((s, si) =>
+            s.values.map((v, ci) => {
+              const bw = (band * 0.7) / c.series.length;
+              const x = plot.x + ci * band + band * 0.15 + si * bw;
+              return <rect key={`${si}-${ci}`} x={x} y={Math.min(y(v), y(0))} width={bw} height={Math.abs(y(v) - y(0))} fill={col(si)} />;
+            }),
+          )
+        : c.series.map((s, si) => (
+            <g key={si}>
+              <polyline fill="none" stroke={col(si)} strokeWidth={0.05} points={s.values.map((v, ci) => `${plot.x + ci * band + band / 2},${y(v)}`).join(" ")} />
+              {s.values.map((v, ci) => <circle key={ci} cx={plot.x + ci * band + band / 2} cy={y(v)} r={0.055} fill={col(si)} />)}
+            </g>
+          ))}
+      {c.categories.map((t, ci) => (
+        <text key={ci} x={plot.x + ci * band + band / 2} y={plot.y + plot.h + fs * 1.3} textAnchor="middle">
+          {t.length > Math.max(6, band / (fs * 0.55)) ? `${t.slice(0, Math.max(5, Math.floor(band / (fs * 0.55)) - 1))}…` : t}
+        </text>
+      ))}
+      {legend && legendItems(c.series.map((s) => s.name))}
+    </>,
+  );
+}
+
 interface Props {
   slide: ComposedSlide;
   width: number;
@@ -188,6 +302,8 @@ function SlideCanvasInner({ slide, width, height, className }: Props) {
           </div>
         );
       }
+      case "chart":
+        return <ChartPreview key={i} shape={s} left={`${(s.x / width) * 100}%`} top={`${(s.y / height) * 100}%`} wPct={`${(s.w / width) * 100}%`} hPct={`${(s.h / height) * 100}%`} />;
       case "image":
         return (
           // eslint-disable-next-line @next/next/no-img-element -- local data URI from the user's document

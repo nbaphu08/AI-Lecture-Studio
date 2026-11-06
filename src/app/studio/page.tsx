@@ -9,15 +9,16 @@ import { LiveBackground } from "@/components/live-background";
 import { HeroSection } from "@/components/hero-section";
 import { ResultsPanel } from "@/components/results-panel";
 import { UploadDropzone } from "@/components/upload-dropzone";
+import type { AiPlanResult } from "@/lib/analyze-client";
 import type { ParsedDocument } from "@/lib/docx/types";
 import { validateDocxFile } from "@/lib/docx/validation";
 import { buildPresentation, readDocument, type GenerationResult, type Stage } from "@/lib/pipeline";
 import { DEFAULT_SETTINGS, type PresentationSettings } from "@/lib/settings";
-import { toUserMessage } from "@/lib/utils/errors";
+import { isAiServiceFailure, toUserMessage } from "@/lib/utils/errors";
 
 const SAMPLE_FILE = "sample-renewable-energy.docx";
 
-type Status = { kind: "idle" } | { kind: "working"; stage: Stage } | { kind: "error"; message: string };
+type Status = { kind: "idle" } | { kind: "working"; stage: Stage } | { kind: "error"; message: string; canUseBasic: boolean };
 
 function Card({ step, title, description, children }: { step: number; title: string; description: string; children: React.ReactNode }) {
   return (
@@ -44,6 +45,9 @@ export default function Home() {
   const [sampleLoading, setSampleLoading] = useState(false);
   // Parsed document cache so "Generate Again" with new settings skips re-reading the file.
   const parsedRef = useRef<{ file: File; doc: ParsedDocument } | null>(null);
+  // AI plan cache: the same document with the same planning inputs is not sent to the AI service twice.
+  const aiPlanRef = useRef<{ file: File; key: string; result: AiPlanResult } | null>(null);
+  const [skipped, setSkipped] = useState<Stage[]>([]);
   const workingRef = useRef(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
@@ -52,6 +56,7 @@ export default function Home() {
 
   const reset = useCallback(() => {
     parsedRef.current = null;
+    aiPlanRef.current = null;
     setResult(null);
     setResultKey(null);
     setStatus({ kind: "idle" });
@@ -92,26 +97,42 @@ export default function Home() {
     }
   }, [handleFile]);
 
-  const generate = useCallback(async () => {
-    if (!file || workingRef.current) return; // prevents duplicate processing on double clicks
-    workingRef.current = true;
-    const onStage = (stage: Stage) => setStatus({ kind: "working", stage });
-    try {
-      let doc = parsedRef.current?.file === file ? parsedRef.current.doc : null;
-      if (!doc) {
-        doc = await readDocument(file, onStage);
-        parsedRef.current = { file, doc };
+  const generate = useCallback(
+    async (planner: "ai" | "basic" = "ai") => {
+      if (!file || workingRef.current) return; // prevents duplicate processing on double clicks
+      workingRef.current = true;
+      setSkipped([]);
+      const onStage = (stage: Stage) => setStatus({ kind: "working", stage });
+      try {
+        let doc = parsedRef.current?.file === file ? parsedRef.current.doc : null;
+        if (!doc) {
+          doc = await readDocument(file, onStage);
+          parsedRef.current = { file, doc };
+        }
+        // Only these settings influence what the AI plans; theme and colors do not.
+        const planKey = `${settings.density}|${settings.styleHint.trim().toLowerCase()}`;
+        const cached = aiPlanRef.current?.file === file && aiPlanRef.current.key === planKey ? aiPlanRef.current.result : undefined;
+        const next = await buildPresentation(doc, file.name, settings, onStage, {
+          planner,
+          cachedAiPlan: cached,
+          onAiPlan: (result) => (aiPlanRef.current = { file, key: planKey, result }),
+          onSkipped: setSkipped,
+        });
+        setResult(next);
+        setResultKey(JSON.stringify(settings));
+        setStatus({ kind: "idle" });
+      } catch (error) {
+        setStatus({
+          kind: "error",
+          message: toUserMessage(error, "Something went wrong while creating your presentation. Please try again."),
+          canUseBasic: planner === "ai" && isAiServiceFailure(error),
+        });
+      } finally {
+        workingRef.current = false;
       }
-      const next = await buildPresentation(doc, file.name, settings, onStage);
-      setResult(next);
-      setResultKey(JSON.stringify(settings));
-      setStatus({ kind: "idle" });
-    } catch (error) {
-      setStatus({ kind: "error", message: toUserMessage(error, "Something went wrong while creating your presentation. Please try again.") });
-    } finally {
-      workingRef.current = false;
-    }
-  }, [file, settings]);
+    },
+    [file, settings],
+  );
 
   // Bring the results into view once a new presentation is ready.
   useEffect(() => {
@@ -156,7 +177,7 @@ export default function Home() {
             <section className="glass rounded-3xl p-5 sm:p-7">
               <button
                 type="button"
-                onClick={generate}
+                onClick={() => generate()}
                 disabled={!file || working}
                 className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-600 text-[15px] font-semibold text-on-gold shadow-sm transition hover:bg-brand-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-panel disabled:cursor-not-allowed disabled:bg-black/10 disabled:text-fg-muted"
               >
@@ -169,7 +190,7 @@ export default function Home() {
               )}
               {working && (
                 <div className="mt-4">
-                  <GenerationProgress stage={status.stage} />
+                  <GenerationProgress stage={status.stage} skipped={skipped} />
                 </div>
               )}
               {status.kind === "error" && (
@@ -180,6 +201,11 @@ export default function Home() {
                     <button type="button" onClick={() => setStatus({ kind: "idle" })} className="mt-1 font-medium underline underline-offset-2">
                       Dismiss
                     </button>
+                    {status.canUseBasic && (
+                      <button type="button" onClick={() => generate("basic")} className="ml-4 mt-1 font-medium underline underline-offset-2">
+                        Create with the basic offline planner instead
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -193,12 +219,12 @@ export default function Home() {
 
         {result && (
           <div ref={resultsRef} className="mx-auto mt-10 max-w-6xl scroll-mt-24 px-4 sm:px-6">
-            <ResultsPanel result={result} onDownload={download} onRegenerate={generate} busy={working} />
+            <ResultsPanel result={result} onDownload={download} onRegenerate={() => generate()} busy={working} />
           </div>
         )}
       </main>
       <footer className="glass-bar border-t py-6 text-center text-xs text-fg-muted">
-        AI Lecture Studio · Rule-based presentation generator · Runs entirely in your browser
+        AI Lecture Studio · AI-planned presentation generator · Your .docx stays in your browser
       </footer>
     </>
   );

@@ -48,6 +48,49 @@ function shadowOf(sh: Shadow | undefined) {
   return { type: "outer" as const, color: sh.color ?? "000000", blur: sh.blur, offset: sh.offset, angle: sh.angle ?? 90, opacity: sh.opacity };
 }
 
+function addChart(pptx: PptxGenJS, slide: PptxSlide, s: Extract<Shape, { t: "chart" }>): void {
+  const common = {
+    x: s.x,
+    y: s.y,
+    w: s.w,
+    h: s.h,
+    chartColors: s.chartType === "pie" ? s.categories.map((_, i) => s.colors[i % s.colors.length]) : s.series.map((_, i) => s.colors[i % s.colors.length]),
+    showLegend: s.chartType === "pie" || s.series.length > 1,
+    legendPos: "b" as const,
+    legendFontFace: s.font,
+    legendFontSize: s.size,
+    legendColor: s.textColor,
+    showTitle: false,
+    dataLabelFontFace: s.font,
+    dataLabelFontSize: s.size,
+    dataLabelColor: s.textColor,
+    altText: s.alt,
+  };
+  const data = s.series.map((x) => ({ name: x.name, labels: s.categories, values: x.values }));
+  const axes = {
+    catAxisLabelFontFace: s.font,
+    catAxisLabelFontSize: s.size,
+    catAxisLabelColor: s.textColor,
+    valAxisLabelFontFace: s.font,
+    valAxisLabelFontSize: s.size,
+    valAxisLabelColor: s.textColor,
+    valGridLine: { color: s.gridColor, size: 0.75 },
+    catGridLine: { style: "none" as const },
+    valAxisTitle: s.unit,
+    showValAxisTitle: !!s.unit,
+    valAxisTitleFontFace: s.font,
+    valAxisTitleFontSize: s.size,
+    valAxisTitleColor: s.textColor,
+  };
+  if (s.chartType === "bar") {
+    slide.addChart(pptx.ChartType.bar, data, { ...common, ...axes, barDir: "col", showValue: s.categories.length <= 8 && s.series.length <= 2, barGapWidthPct: 60 });
+  } else if (s.chartType === "line") {
+    slide.addChart(pptx.ChartType.line, data, { ...common, ...axes, lineSize: 3, lineDataSymbolSize: 8, showValue: s.categories.length <= 8 });
+  } else {
+    slide.addChart(pptx.ChartType.pie, data.slice(0, 1), { ...common, showPercent: true, showValue: false, showLabel: false, dataLabelColor: "FFFFFF", dataLabelFontBold: true });
+  }
+}
+
 function addShape(pptx: PptxGenJS, slide: PptxSlide, s: Shape, gradients: GradientRegistry): void {
   switch (s.t) {
     case "rect": {
@@ -149,6 +192,9 @@ function addShape(pptx: PptxGenJS, slide: PptxSlide, s: Shape, gradients: Gradie
     case "image":
       slide.addImage({ data: s.src, x: s.x, y: s.y, w: s.w, h: s.h, altText: s.alt, shadow: shadowOf(s.shadow) });
       break;
+    case "chart":
+      addChart(pptx, slide, s);
+      break;
     case "table": {
       const pad = 0.07 * PT_PER_IN;
       const none = { type: "none" as const };
@@ -231,7 +277,7 @@ export async function buildPptx(deck: ComposedDeck, meta: PptxMeta): Promise<{ p
   pptx.layout = "SLIDECRAFT";
   pptx.title = meta.title;
   pptx.subject = meta.title;
-  pptx.company = "Created with SlideCraft";
+  pptx.company = "Created with AI Lecture Studio";
   if (meta.author) pptx.author = meta.author;
 
   const used = new Set(JSON.stringify(deck).toUpperCase().match(/[0-9A-F]{6}/g) ?? []);
@@ -240,6 +286,7 @@ export async function buildPptx(deck: ComposedDeck, meta: PptxMeta): Promise<{ p
     const slide = pptx.addSlide();
     slide.background = { color: composed.backgroundGradient ? gradients.color(composed.backgroundGradient) : composed.background };
     for (const shape of composed.shapes) addShape(pptx, slide, shape, gradients);
+    if (composed.notes) slide.addNotes(composed.notes);
   }
   return { pptx, gradients: gradients.byColor };
 }

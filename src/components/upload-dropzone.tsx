@@ -113,7 +113,7 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-fg-muted">
         <span className="inline-flex items-center gap-1.5">
           <Lock className="h-3.5 w-3.5" aria-hidden />
-          Processed locally in your browser — nothing is uploaded.
+          Your .docx stays in your browser. Only its text is sent to an AI service to plan the slides; nothing is stored.
         </span>
         {!file && (
           <button
@@ -127,7 +127,7 @@ export function UploadDropzone({ file, error, disabled, onFile, onClear, onTrySa
         )}
       </div>
       <p className="mt-2 text-xs leading-relaxed text-fg-muted">
-        SlideCraft extracts your content and redesigns it as slides; the original Word formatting is not reproduced exactly.
+        AI Lecture Studio extracts your content and redesigns it as slides; the original Word formatting is not reproduced exactly.
       </p>
     </div>
   );

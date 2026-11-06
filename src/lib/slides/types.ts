@@ -7,6 +7,13 @@ export interface SlideImage {
   height?: number;
 }
 
+export type ChartType = "bar" | "line" | "pie";
+
+export interface ChartSeries {
+  name: string;
+  values: number[];
+}
+
 export interface Column {
   heading?: string;
   items: string[];
@@ -23,6 +30,8 @@ interface SlideBase {
   sourceIds: string[];
   /** Label of the document section this slide belongs to. */
   section?: string;
+  /** Speaker notes written into the PowerPoint notes pane. */
+  notes?: string;
 }
 
 export type Slide = SlideBase &
@@ -39,6 +48,8 @@ export type Slide = SlideBase &
     | { kind: "table"; title: string; headers?: string[]; rows: string[][] }
     | { kind: "imageText"; title: string; image: SlideImage; paragraphs: string[]; bullets: string[] }
     | { kind: "conclusion"; title: string; points: string[] }
+    | { kind: "chart"; title: string; chartType: ChartType; categories: string[]; series: ChartSeries[]; unit?: string; caption?: string }
+    | { kind: "quiz"; title: string; prompts: string[]; startAt: number }
   );
 
 export type SlideKind = Slide["kind"];
@@ -111,6 +122,12 @@ export function slideText(slide: Slide): string {
       break;
     case "conclusion":
       parts.push(slide.title, ...slide.points);
+      break;
+    case "chart":
+      parts.push(slide.title, slide.caption ?? "", ...slide.categories, ...slide.series.map((s) => s.name));
+      break;
+    case "quiz":
+      parts.push(slide.title, ...slide.prompts);
       break;
   }
   return parts.filter(Boolean).join(" ");

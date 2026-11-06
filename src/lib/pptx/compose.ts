@@ -6,6 +6,8 @@ import type { ComposedDeck } from "./draw";
 import type { LayoutResult } from "./layouts/chrome";
 import { comparisonLayout } from "./layouts/comparison";
 import { conclusionLayout } from "./layouts/conclusion";
+import { chartLayout } from "./layouts/chart";
+import { quizLayout } from "./layouts/quiz";
 import { bulletsLayout, contentLayout } from "./layouts/content";
 import { coverLayout } from "./layouts/cover";
 import { definitionLayout } from "./layouts/definition";
@@ -43,6 +45,10 @@ function layoutFor(slide: Slide, ctx: Ctx): LayoutResult {
       return imageTextLayout(slide, ctx);
     case "conclusion":
       return conclusionLayout(slide, ctx);
+    case "chart":
+      return chartLayout(slide, ctx);
+    case "quiz":
+      return quizLayout(slide, ctx);
   }
 }
 
@@ -67,6 +73,7 @@ export function composeDeck(plan: DeckPlan, settings: EffectiveSettings): Compos
       backgroundGradient: result.backgroundGradient,
       shapes: result.shapes,
       title: slide.title,
+      notes: slide.notes,
     };
   });
   return { w: grid.w, h: grid.h, slides };

@@ -5,20 +5,23 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx serve out",
+    "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "sample": "node scripts/build-sample-docx.ts"
+    "sample": "node scripts/build-sample-docx.ts",
+    "check:gemini": "node --env-file-if-exists=.env.local scripts/check-gemini.mjs"
   },
   "dependencies": {
+    "@google/genai": "^3.0.0",
     "jszip": "^3.10.2",
     "lucide-react": "^1.64.0",
     "mammoth": "^1.13.0",
     "next": "^16.4.3",
     "pptxgenjs": "^4.0.1",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

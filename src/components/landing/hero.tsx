@@ -30,7 +30,7 @@ export function Hero() {
       <div className="lp-hero-content">
         <p className="lp-chip lp-enter" style={{ "--d": 1 } as React.CSSProperties}>
           <b>New</b>
-          Word to PowerPoint, right in your browser
+          Word to PowerPoint, planned by AI
         </p>
         <h1 id="intro-title" className="lp-title lp-enter" style={{ "--d": 2 } as React.CSSProperties}>
           AI <span className="lp-serif">Lecture</span> Studio

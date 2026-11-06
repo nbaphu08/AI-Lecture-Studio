@@ -77,6 +77,22 @@ export type Shape =
       /** Text transparency, 0 (opaque) to 1 (invisible). */
       alpha?: number;
     }
+  /** Native, editable PowerPoint chart. */
+  | ({
+      t: "chart";
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      font: string;
+      size: number;
+      textColor: string;
+      gridColor: string;
+      /** One color per series (bar/line) or per category (pie). */
+      colors: string[];
+      unit?: string;
+      alt?: string;
+    } & ChartData)
   | { t: "image"; x: number; y: number; w: number; h: number; src: string; alt?: string; shadow?: Shadow }
   | {
       t: "table";
@@ -99,6 +115,12 @@ export type Shape =
       rulesOnly?: boolean;
     };
 
+export interface ChartData {
+  chartType: "bar" | "line" | "pie";
+  categories: string[];
+  series: { name: string; values: number[] }[];
+}
+
 export interface ComposedSlide {
   background: string;
   /** Replaces the flat background when present. */
@@ -106,6 +128,8 @@ export interface ComposedSlide {
   shapes: Shape[];
   /** Plain-text version for speaker notes / accessibility. */
   title: string;
+  /** Speaker notes for the PowerPoint notes pane. */
+  notes?: string;
 }
 
 export interface ComposedDeck {

@@ -19,6 +19,8 @@ const KIND_LABELS: Record<SlideKind, string> = {
   table: "Table",
   imageText: "Image + text",
   conclusion: "Takeaways",
+  chart: "Chart",
+  quiz: "Discussion",
 };
 
 interface Props {

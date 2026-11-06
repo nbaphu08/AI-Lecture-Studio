@@ -12,7 +12,7 @@ const serif = Instrument_Serif({ subsets: ["latin"], weight: "400", style: ["nor
 
 export const metadata: Metadata = {
   title: "AI Lecture Studio — Professional slides from your lecture notes",
-  description: "Turn a Word document into a professionally designed, fully editable PowerPoint deck. Everything runs in your browser.",
+  description: "Turn a Word document into a professionally designed, fully editable PowerPoint deck. AI plans the slides; the PowerPoint is built in your browser.",
 };
 
 export default function LandingPage() {
