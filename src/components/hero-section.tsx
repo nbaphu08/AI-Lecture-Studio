@@ -28,6 +28,12 @@ export function HeroSection() {
             </li>
           ))}
         </ol>
+        <figure className="mx-auto mt-8 max-w-xl border-t border-edge pt-6">
+          <blockquote className="font-display text-xl italic leading-snug text-fg-soft">
+            “Perfection is achieved when there is nothing left to take away.”
+          </blockquote>
+          <figcaption className="mt-1.5 text-[11px] uppercase tracking-wider text-fg-muted">Antoine de Saint-Exupéry</figcaption>
+        </figure>
       </div>
     </section>
   );
